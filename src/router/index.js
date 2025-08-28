@@ -1,3 +1,5 @@
+// Centralized route definitions. Each route lazy-loads its view component
+// to keep initial bundle small and improve performance.
 import { createRouter, createWebHistory } from 'vue-router'
 
 const Home = () => import('../views/HomeView.vue')
@@ -10,6 +12,7 @@ const SignUp = () => import('../views/SignUpView.vue')
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    // Public pages
     { path: '/', name: 'home', component: Home },
     { path: '/resources', name: 'resources', component: Resources },
     { path: '/tools', name: 'tools', component: Tools },

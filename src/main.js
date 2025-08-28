@@ -1,3 +1,9 @@
+/**
+ * Application bootstrap
+ * - Loads global styles (Bootstrap) for responsive UI
+ * - Creates Vue application instance
+ * - Registers Pinia (state) and Router (navigation)
+ */
 import { createApp } from 'vue'
 import './style.css'
 import 'bootstrap/dist/css/bootstrap.min.css'

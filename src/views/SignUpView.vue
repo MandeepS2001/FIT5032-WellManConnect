@@ -1,4 +1,6 @@
 <script setup>
+// Client-only demo sign-up with validations and LocalStorage persistence
+// Validations: required name, email format, min password length
 import { ref, computed } from 'vue'
 
 const name = ref('')
@@ -33,24 +35,26 @@ const submit = () => {
   <div class="row justify-content-center">
     <div class="col-md-6">
       <h2>Create Account</h2>
-      <form @submit.prevent="submit" novalidate>
-        <div class="mb-3">
-          <label class="form-label">Name</label>
-          <input v-model="name" type="text" class="form-control" :class="{ 'is-invalid': errors.name }"/>
-          <div v-if="errors.name" class="invalid-feedback">{{ errors.name }}</div>
+      <form @submit.prevent="submit" novalidate class="card shadow-sm border-0">
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label">Name</label>
+            <input v-model="name" type="text" class="form-control" :class="{ 'is-invalid': errors.name }"/>
+            <div v-if="errors.name" class="invalid-feedback">{{ errors.name }}</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input v-model="email" type="email" class="form-control" :class="{ 'is-invalid': errors.email }"/>
+            <div v-if="errors.email" class="invalid-feedback">{{ errors.email }}</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input v-model="password" type="password" class="form-control" :class="{ 'is-invalid': errors.password }"/>
+            <div class="form-text">At least 6 characters.</div>
+            <div v-if="errors.password" class="invalid-feedback">{{ errors.password }}</div>
+          </div>
+          <button class="btn btn-primary w-100" type="submit">Sign Up</button>
         </div>
-        <div class="mb-3">
-          <label class="form-label">Email</label>
-          <input v-model="email" type="email" class="form-control" :class="{ 'is-invalid': errors.email }"/>
-          <div v-if="errors.email" class="invalid-feedback">{{ errors.email }}</div>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Password</label>
-          <input v-model="password" type="password" class="form-control" :class="{ 'is-invalid': errors.password }"/>
-          <div class="form-text">At least 6 characters.</div>
-          <div v-if="errors.password" class="invalid-feedback">{{ errors.password }}</div>
-        </div>
-        <button class="btn btn-primary w-100" type="submit">Sign Up</button>
       </form>
     </div>
   </div>

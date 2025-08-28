@@ -1,4 +1,5 @@
-/* Keep minimal base styles and let Bootstrap handle most UI */
+/* Keep minimal base styles and let Bootstrap handle most UI.
+   App shell uses flex to keep footer at the bottom. */
 body {
   margin: 0;
   min-width: 320px;
@@ -8,4 +9,27 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+}
+
+/* Enhanced UI helpers */
+.navbar.sticky-top {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.hero {
+  background: linear-gradient(135deg, #f8fbff 0%, #eef2ff 50%, #f8fbff 100%);
+  border-radius: .75rem;
+  padding: 2.5rem;
+}
+
+.card.hoverable {
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.card.hoverable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+}
+
+.lead-muted {
+  color: #6c757d;
 }

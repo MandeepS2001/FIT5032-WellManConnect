@@ -2,9 +2,17 @@
 </script>
 
 <template>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <!--
+    Global layout:
+    - Responsive Bootstrap navbar with RouterLinks
+    - Main container displaying current route via <RouterView>
+    - Simple footer. Layout ensures minimum viewport height for content.
+  -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
     <div class="container">
-      <a class="navbar-brand" href="#">WellMan Connect</a>
+      <a class="navbar-brand fw-bold" href="#">
+        <span class="text-primary">WellMan</span> Connect
+      </a>
       <button
         class="navbar-toggler"
         type="button"
@@ -24,11 +32,13 @@
           <li class="nav-item"><RouterLink class="nav-link" to="/appointments">Book an Appointment</RouterLink></li>
           <li class="nav-item"><RouterLink class="nav-link" to="/account">User Account</RouterLink></li>
         </ul>
-        <RouterLink to="/signup" class="btn btn-outline-light">Sign Up</RouterLink>
+        <div class="d-flex gap-2">
+          <RouterLink to="/signup" class="btn btn-primary">Sign Up</RouterLink>
+        </div>
       </div>
     </div>
   </nav>
-  <main class="container my-4">
+  <main class="container-xxl my-4">
     <RouterView />
   </main>
   <footer class="bg-light py-3 mt-auto">

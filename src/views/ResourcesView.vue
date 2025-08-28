@@ -1,4 +1,6 @@
 <script setup>
+// Displays dynamic resources. First load seeds default data,
+// then persists to LocalStorage so data survives reloads (BR B.2).
 import { ref, onMounted } from 'vue'
 
 const resources = ref([])
@@ -20,14 +22,25 @@ onMounted(() => {
 
 <template>
   <div>
-    <h2>Health & Resources</h2>
-    <p class="text-muted">Dynamic list stored in LocalStorage.</p>
-    <ul class="list-group">
-      <li v-for="r in resources" :key="r.id" class="list-group-item d-flex justify-content-between align-items-center">
-        <span>{{ r.title }}</span>
-        <span class="badge bg-secondary">{{ r.category }}</span>
-      </li>
-    </ul>
+    <div class="d-flex align-items-end justify-content-between mb-3">
+      <div>
+        <h2 class="mb-0">Health & Resources</h2>
+        <small class="text-muted">Dynamic list stored in LocalStorage</small>
+      </div>
+      <RouterLink class="btn btn-sm btn-outline-primary" to="/tools">Open Goal Tracker</RouterLink>
+    </div>
+    <div class="row g-3">
+      <div v-for="r in resources" :key="r.id" class="col-12 col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm border-0">
+          <div class="card-body">
+            <span class="badge bg-secondary float-end">{{ r.category }}</span>
+            <h5 class="card-title">{{ r.title }}</h5>
+            <p class="card-text text-muted">Curated guidance tailored for men's health.</p>
+            <button class="btn btn-outline-secondary btn-sm">Read</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
