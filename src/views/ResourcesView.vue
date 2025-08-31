@@ -484,7 +484,9 @@ onMounted(() => {
               <small class="text-muted">{{ resource.readTime }}</small>
             </div>
             
-            <h5 class="card-title">{{ resource.title }}</h5>
+            <RouterLink :to="`/article/${resource.id}`" class="text-decoration-none">
+              <h5 class="card-title text-dark">{{ resource.title }}</h5>
+            </RouterLink>
             <p class="card-text text-muted flex-grow-1">{{ resource.content.substring(0, 120) }}...</p>
             
             <div class="d-flex align-items-center mb-3">
@@ -497,11 +499,11 @@ onMounted(() => {
             </div>
             
             <div class="d-flex gap-2">
-              <button class="btn btn-primary btn-sm flex-grow-1" @click="openRatingModal(resource)">
-                <i class="bi bi-star me-2"></i>Rate & Review
-              </button>
-              <button class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-bookmark"></i>
+              <RouterLink :to="`/article/${resource.id}`" class="btn btn-primary btn-sm flex-grow-1">
+                <i class="bi bi-book me-2"></i>Read Article
+              </RouterLink>
+              <button class="btn btn-outline-secondary btn-sm" @click="openRatingModal(resource)">
+                <i class="bi bi-star"></i>
               </button>
             </div>
           </div>

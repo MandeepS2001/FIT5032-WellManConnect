@@ -11,6 +11,7 @@ const SignUp = () => import('../views/SignUpView.vue')
 const Login = () => import('../views/LoginView.vue')
 const Admin = () => import('../views/AdminView.vue')
 const Profile = () => import('../views/ProfileView.vue')
+const Article = () => import('../views/ArticleView.vue')
 
 const router = createRouter({
   history: createWebHistory(),
@@ -18,6 +19,7 @@ const router = createRouter({
     // Public pages
     { path: '/', name: 'home', component: Home },
     { path: '/resources', name: 'resources', component: Resources },
+    { path: '/article/:id', name: 'article', component: Article },
     { path: '/tools', name: 'tools', component: Tools },
     { path: '/appointments', name: 'appointments', component: Appointments },
     { path: '/signup', name: 'signup', component: SignUp },
