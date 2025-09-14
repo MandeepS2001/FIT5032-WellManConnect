@@ -20,6 +20,9 @@ const ratingForm = reactive({
   review: '',
   helpful: false
 })
+const ratingError = ref('')
+const isSubmittingRating = ref(false)
+const successMessage = ref('')
 
 // Review moderation
 const pendingReviews = ref([])
@@ -184,38 +187,72 @@ const openRatingModal = (resource) => {
 }
 
 const submitRating = async () => {
+  // Enhanced validation
   if (!ratingForm.review.trim()) {
-    alert('Please provide a review comment.')
+    ratingError.value = 'Please provide a review comment.'
+    return
+  }
+  
+  if (ratingForm.review.trim().length < 10) {
+    ratingError.value = 'Review must be at least 10 characters long.'
+    return
+  }
+  
+  if (ratingForm.review.trim().length > 500) {
+    ratingError.value = 'Review must be no more than 500 characters.'
+    return
+  }
+  
+  // Check for duplicate review
+  const allReviews = JSON.parse(localStorage.getItem('wellman_reviews') || '[]')
+  const existingReview = allReviews.find(review => 
+    review.resourceId === selectedResource.value.id && 
+    review.userId === authStore.currentUser.id
+  )
+  
+  if (existingReview) {
+    ratingError.value = 'You have already reviewed this resource.'
     return
   }
 
-  const newReview = {
-    id: Date.now(),
-    resourceId: selectedResource.value.id,
-    userId: authStore.currentUser.id,
-    userName: `${authStore.currentUser.firstName} ${authStore.currentUser.lastName}`,
-    userEmail: authStore.currentUser.email,
-    rating: ratingForm.rating,
-    review: ratingForm.review.trim(),
-    helpful: ratingForm.helpful,
-    createdAt: new Date().toISOString(),
-    status: authStore.isAdmin ? 'approved' : 'pending' // Auto-approve admin reviews
+  ratingError.value = ''
+  isSubmittingRating.value = true
+
+  try {
+    const newReview = {
+      id: Date.now(),
+      resourceId: selectedResource.value.id,
+      userId: authStore.currentUser.id,
+      userName: `${authStore.currentUser.firstName} ${authStore.currentUser.lastName}`,
+      userEmail: authStore.currentUser.email,
+      rating: ratingForm.rating,
+      review: ratingForm.review.trim(),
+      helpful: ratingForm.helpful,
+      helpfulCount: 0,
+      createdAt: new Date().toISOString(),
+      status: authStore.isAdmin ? 'approved' : 'pending' // Auto-approve admin reviews
+    }
+
+    // Add review to localStorage
+    allReviews.push(newReview)
+    localStorage.setItem('wellman_reviews', JSON.stringify(allReviews))
+
+    // Update resource rating
+    updateResourceRating(selectedResource.value.id)
+
+    // Close modal
+    showRatingModal.value = false
+    selectedResource.value = null
+
+    // Show success message with better UX
+    showSuccessMessage('Thank you for your review! It will be visible once approved.')
+    
+  } catch (error) {
+    console.error('Error submitting review:', error)
+    ratingError.value = 'Failed to submit review. Please try again.'
+  } finally {
+    isSubmittingRating.value = false
   }
-
-  // Add review to localStorage
-  const allReviews = JSON.parse(localStorage.getItem('wellman_reviews') || '[]')
-  allReviews.push(newReview)
-  localStorage.setItem('wellman_reviews', JSON.stringify(allReviews))
-
-  // Update resource rating
-  updateResourceRating(selectedResource.value.id)
-
-  // Close modal
-  showRatingModal.value = false
-  selectedResource.value = null
-
-  // Show success message
-  alert('Thank you for your review! It will be visible once approved.')
 }
 
 const updateResourceRating = (resourceId) => {
@@ -264,6 +301,24 @@ const markReviewHelpful = (reviewId) => {
     allReviews[reviewIndex].helpfulCount++
     localStorage.setItem('wellman_reviews', JSON.stringify(allReviews))
   }
+}
+
+// Success message function
+const showSuccessMessage = (message) => {
+  successMessage.value = message
+  setTimeout(() => {
+    successMessage.value = ''
+  }, 5000)
+}
+
+// Check if user has already reviewed a resource
+const hasUserReviewed = (resourceId) => {
+  if (!authStore.isAuthenticated) return false
+  const allReviews = JSON.parse(localStorage.getItem('wellman_reviews') || '[]')
+  return allReviews.some(review => 
+    review.resourceId === resourceId && 
+    review.userId === authStore.currentUser.id
+  )
 }
 
 // Review moderation functions
@@ -360,6 +415,13 @@ onMounted(() => {
 
 <template>
   <div class="container">
+    <!-- Success Message -->
+    <div v-if="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+      <i class="bi bi-check-circle-fill me-2"></i>
+      {{ successMessage }}
+      <button type="button" class="btn-close" @click="successMessage = ''"></button>
+    </div>
+
     <!-- Header -->
     <div class="row mb-4">
       <div class="col-12">
@@ -491,9 +553,11 @@ onMounted(() => {
             
             <div class="d-flex align-items-center mb-3">
               <div class="d-flex align-items-center me-3">
-                <span class="text-warning me-1">★</span>
-                <span class="fw-semibold">{{ resource.rating }}</span>
-                <small class="text-muted ms-1">({{ resource.reviewCount }})</small>
+                <div class="d-flex align-items-center">
+                  <span class="text-warning me-1">{{ '★'.repeat(Math.floor(resource.rating)) }}{{ '☆'.repeat(5 - Math.floor(resource.rating)) }}</span>
+                  <span class="fw-semibold">{{ resource.rating }}</span>
+                </div>
+                <small class="text-muted ms-2">({{ resource.reviewCount }} review{{ resource.reviewCount !== 1 ? 's' : '' }})</small>
               </div>
               <small class="text-muted">by {{ resource.author }}</small>
             </div>
@@ -502,8 +566,14 @@ onMounted(() => {
               <RouterLink :to="`/article/${resource.id}`" class="btn btn-primary btn-sm flex-grow-1">
                 <i class="bi bi-book me-2"></i>Read Article
               </RouterLink>
-              <button class="btn btn-outline-secondary btn-sm" @click="openRatingModal(resource)">
-                <i class="bi bi-star"></i>
+              <button 
+                class="btn btn-sm" 
+                :class="hasUserReviewed(resource.id) ? 'btn-success' : 'btn-outline-secondary'"
+                @click="openRatingModal(resource)"
+                :disabled="!authStore.isAuthenticated"
+                :title="hasUserReviewed(resource.id) ? 'You have already reviewed this resource' : 'Rate this resource'"
+              >
+                <i class="bi" :class="hasUserReviewed(resource.id) ? 'bi-check-circle' : 'bi-star'"></i>
               </button>
             </div>
           </div>
@@ -555,11 +625,21 @@ onMounted(() => {
                 <label class="form-label">Review</label>
                 <textarea 
                   class="form-control" 
+                  :class="{ 'is-invalid': ratingError }"
                   rows="4"
                   v-model="ratingForm.review"
-                  placeholder="Share your thoughts about this resource..."
+                  placeholder="Share your thoughts about this resource... (minimum 10 characters)"
                   required
+                  maxlength="500"
                 ></textarea>
+                <div class="d-flex justify-content-between mt-1">
+                  <div v-if="ratingError" class="invalid-feedback d-block">
+                    {{ ratingError }}
+                  </div>
+                  <small class="text-muted ms-auto">
+                    {{ ratingForm.review.length }}/500 characters
+                  </small>
+                </div>
               </div>
               
               <div class="mb-3">
@@ -573,8 +653,11 @@ onMounted(() => {
             </form>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="showRatingModal = false">Cancel</button>
-            <button type="button" class="btn btn-primary" @click="submitRating">Submit Review</button>
+            <button type="button" class="btn btn-secondary" @click="showRatingModal = false" :disabled="isSubmittingRating">Cancel</button>
+            <button type="button" class="btn btn-primary" @click="submitRating" :disabled="isSubmittingRating">
+              <span v-if="isSubmittingRating" class="spinner-border spinner-border-sm me-2" role="status"></span>
+              {{ isSubmittingRating ? 'Submitting...' : 'Submit Review' }}
+            </button>
           </div>
         </div>
       </div>
