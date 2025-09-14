@@ -48,7 +48,11 @@ onMounted(() => {
     - Role-based navigation items
     - Session management and logout functionality
     - Professional footer
+    - Accessibility features and responsive design
   -->
+  
+  <!-- Skip to content link for screen readers -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
   
   <!-- Error Alert -->
   <div v-if="errorMessage" class="alert alert-danger alert-dismissible fade show m-0" role="alert">
@@ -57,11 +61,11 @@ onMounted(() => {
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
   </div>
 
-  <nav class="navbar navbar-expand-lg sticky-top">
+  <nav class="navbar navbar-expand-lg sticky-top" role="navigation" aria-label="Main navigation">
     <div class="container">
       <div class="navbar-brand">
         <span class="text-primary">WellMan</span> Connect
-        <span class="badge bg-primary ms-2">Beta</span>
+        <span class="badge bg-primary ms-2" aria-label="Beta version">Beta</span>
       </div>
       <button
         class="navbar-toggler"
@@ -75,7 +79,7 @@ onMounted(() => {
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0" role="menubar">
           <li class="nav-item">
             <RouterLink class="nav-link" to="/">Home</RouterLink>
           </li>
@@ -164,12 +168,12 @@ onMounted(() => {
   </div>
 
   <!-- Main content -->
-  <main class="container-xxl my-4 fade-in" v-else>
+  <main id="main-content" class="container-xxl my-4 fade-in" v-else role="main">
     <RouterView />
   </main>
 
   <!-- Footer -->
-  <footer>
+  <footer role="contentinfo">
     <div class="container">
       <div class="row align-items-center">
         <div class="col-md-6">
@@ -178,7 +182,7 @@ onMounted(() => {
           </div>
         </div>
         <div class="col-md-6 text-md-end">
-          <nav class="d-flex gap-3 justify-content-md-end">
+          <nav class="d-flex gap-3 justify-content-md-end" role="navigation" aria-label="Footer navigation">
             <a href="#" class="text-muted text-decoration-none small">Privacy</a>
             <a href="#" class="text-muted text-decoration-none small">Terms</a>
             <a href="#" class="text-muted text-decoration-none small">Contact</a>
