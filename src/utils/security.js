@@ -104,7 +104,7 @@ export const sanitizePhone = (phone) => {
 }
 
 /**
- * Sanitize password (basic validation)
+ * Sanitize password (enhanced validation)
  * @param {string} password - Password to validate
  * @returns {string|null} Password if valid, null otherwise
  */
@@ -113,11 +113,22 @@ export const sanitizePassword = (password) => {
   
   const sanitized = password.trim()
   
-  // Basic password requirements
+  // Enhanced password requirements
   if (sanitized.length < 8) return null
+  if (sanitized.length > 128) return null // Prevent extremely long passwords
   if (!/(?=.*[a-z])/.test(sanitized)) return null
   if (!/(?=.*[A-Z])/.test(sanitized)) return null
   if (!/(?=.*\d)/.test(sanitized)) return null
+  if (!/(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/.test(sanitized)) return null // Special character requirement
+  
+  // Check for common weak patterns
+  const weakPatterns = [
+    /(.)\1{2,}/, // Repeated characters
+    /123456|abcdef|qwerty/i, // Common sequences
+    /password|admin|user/i // Common words
+  ]
+  
+  if (weakPatterns.some(pattern => pattern.test(sanitized))) return null
   
   return sanitized
 }
@@ -188,26 +199,72 @@ export const configureSecurityHeaders = () => {
 
 // Password Security
 /**
- * Simple password hashing (use bcrypt in production)
- * @param {string} password - Password to hash
- * @returns {string} Hashed password
+ * Generate a random salt
+ * @returns {string} Random salt
  */
-export const hashPassword = (password) => {
-  // This is a simple base64 encoding for demo purposes
-  // In production, use bcrypt or similar
-  return btoa(password)
+export const generateSalt = () => {
+  const array = new Uint8Array(16)
+  crypto.getRandomValues(array)
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
 }
 
 /**
- * Verify password hash
- * @param {string} password - Plain text password
- * @param {string} hash - Hashed password
- * @returns {boolean} True if password matches hash
+ * Hash password with salt using Web Crypto API (enhanced security)
+ * @param {string} password - Password to hash
+ * @param {string} salt - Salt for hashing
+ * @returns {Promise<string>} Hashed password with salt
  */
-export const verifyPassword = (password, hash) => {
-  // Simple verification for demo purposes
-  // In production, use bcrypt.compare()
-  return btoa(password) === hash
+export const hashPassword = async (password, salt = null) => {
+  if (!salt) {
+    salt = generateSalt()
+  }
+  
+  const encoder = new TextEncoder()
+  const data = encoder.encode(password + salt)
+  
+  // Use PBKDF2 for better security
+  const key = await crypto.subtle.importKey(
+    'raw',
+    data,
+    { name: 'PBKDF2' },
+    false,
+    ['deriveBits']
+  )
+  
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt: encoder.encode(salt),
+      iterations: 100000, // High iteration count for security
+      hash: 'SHA-256'
+    },
+    key,
+    256
+  )
+  
+  const hashArray = Array.from(new Uint8Array(derivedBits))
+  const hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  
+  return `${salt}:${hash}`
+}
+
+/**
+ * Verify password against hash with salt
+ * @param {string} password - Password to verify
+ * @param {string} hashedPassword - Stored hash with salt
+ * @returns {Promise<boolean>} True if password matches
+ */
+export const verifyPassword = async (password, hashedPassword) => {
+  try {
+    const [salt, hash] = hashedPassword.split(':')
+    if (!salt || !hash) return false
+    
+    const newHash = await hashPassword(password, salt)
+    return newHash === hashedPassword
+  } catch (error) {
+    console.error('Password verification error:', error)
+    return false
+  }
 }
 
 // Session Security
@@ -344,7 +401,8 @@ export const validationRules = {
     required: true,
     sanitize: sanitizePassword,
     minLength: 8,
-    message: 'Password must be at least 8 characters with uppercase, lowercase, and number'
+    maxLength: 128,
+    message: 'Password must be 8-128 characters with uppercase, lowercase, number, and special character'
   },
   phone: {
     required: true,
@@ -424,6 +482,7 @@ export default {
   configureSecurityHeaders,
   
   // Password Security
+  generateSalt,
   hashPassword,
   verifyPassword,
   

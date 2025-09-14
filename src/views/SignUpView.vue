@@ -2,6 +2,7 @@
 import { ref, reactive, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { hashPassword } from '../utils/security'
 
 const router = useRouter()
 const route = useRoute()
@@ -277,12 +278,15 @@ const handleSignup = async () => {
     await new Promise(resolve => setTimeout(resolve, 1500))
 
     // Create new user
+    // Hash password securely
+    const hashedPassword = await hashPassword(formData.password)
+    
     const newUser = {
       id: Date.now(),
       firstName: formData.firstName.trim(),
       lastName: formData.lastName.trim(),
       email: formData.email.toLowerCase(),
-      password: btoa(formData.password), // Simple encoding (use bcrypt in production)
+      password: hashedPassword, // Secure PBKDF2 hashing with salt
       dateOfBirth: formData.dateOfBirth,
       phoneNumber: formData.phoneNumber,
       role: 'user', // Default role
@@ -312,12 +316,14 @@ const handleSignup = async () => {
 
 // Create demo admin account
 const createDemoAdmin = async () => {
+  const hashedPassword = await hashPassword('Admin123!')
+  
   const adminUser = {
     id: Date.now() + 1,
     firstName: 'Admin',
     lastName: 'User',
     email: 'admin@wellman.com',
-    password: btoa('Admin123!'),
+    password: hashedPassword, // Secure PBKDF2 hashing with salt
     dateOfBirth: '1990-01-01',
     phoneNumber: '+1234567890',
     role: 'admin',

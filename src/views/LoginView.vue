@@ -2,6 +2,7 @@
 import { ref, reactive, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { verifyPassword } from '../utils/security'
 
 const router = useRouter()
 const route = useRoute()
@@ -94,9 +95,9 @@ const handleLogin = async () => {
       return
     }
 
-    // Simple password verification (in real app, use bcrypt)
-    const storedPassword = atob(user.password) // Decode from base64
-    if (storedPassword !== formData.password) {
+    // Secure password verification using PBKDF2
+    const isValidPassword = await verifyPassword(formData.password, user.password)
+    if (!isValidPassword) {
       loginError.value = 'Invalid email or password'
       return
     }
