@@ -40,6 +40,17 @@ const stats = computed(() => {
   const totalResources = resources.value.length
   const totalAppointments = appointments.value.length
   
+  // Calculate additional metrics
+  const recentUsers = users.value.filter(u => {
+    const createdDate = new Date(u.createdAt)
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    return createdDate > thirtyDaysAgo
+  }).length
+  
+  const avgRating = resources.value.length > 0 
+    ? (resources.value.reduce((sum, r) => sum + (r.rating || 0), 0) / resources.value.length).toFixed(1)
+    : 0
+  
   return {
     totalUsers,
     activeUsers,
@@ -47,6 +58,8 @@ const stats = computed(() => {
     premiumUsers,
     totalResources,
     totalAppointments,
+    recentUsers,
+    avgRating,
     userGrowth: Math.round((activeUsers / totalUsers) * 100) || 0
   }
 })
@@ -213,6 +226,160 @@ const exportData = () => {
   URL.revokeObjectURL(url)
 }
 
+// Data Export Functions
+const exportUsers = () => {
+  const userData = users.value.map(user => ({
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    role: user.role,
+    isActive: user.isActive,
+    createdAt: user.createdAt,
+    lastLogin: user.lastLogin,
+    phoneNumber: user.phoneNumber,
+    dateOfBirth: user.dateOfBirth
+  }))
+  
+  const csvContent = convertToCSV(userData)
+  downloadFile(csvContent, 'wellman-users.csv', 'text/csv')
+}
+
+const exportResources = () => {
+  const resourceData = resources.value.map(resource => ({
+    id: resource.id,
+    title: resource.title,
+    category: resource.category,
+    author: resource.author,
+    rating: resource.rating,
+    reviewCount: resource.reviewCount,
+    createdAt: resource.createdAt,
+    tags: resource.tags.join(', ')
+  }))
+  
+  const csvContent = convertToCSV(resourceData)
+  downloadFile(csvContent, 'wellman-resources.csv', 'text/csv')
+}
+
+const exportAppointments = () => {
+  const appointmentData = appointments.value.map(appointment => ({
+    id: appointment.id,
+    service: appointment.service?.name || 'N/A',
+    date: appointment.date,
+    time: appointment.time,
+    patientName: `${appointment.patientInfo?.firstName || ''} ${appointment.patientInfo?.lastName || ''}`.trim(),
+    patientEmail: appointment.patientInfo?.email || '',
+    status: appointment.status,
+    createdAt: appointment.createdAt
+  }))
+  
+  const csvContent = convertToCSV(appointmentData)
+  downloadFile(csvContent, 'wellman-appointments.csv', 'text/csv')
+}
+
+const exportAllData = () => {
+  const allData = {
+    exportDate: new Date().toISOString(),
+    statistics: stats.value,
+    users: users.value,
+    resources: resources.value,
+    appointments: appointments.value,
+    reviews: JSON.parse(localStorage.getItem('wellman_reviews') || '[]'),
+    bookings: JSON.parse(localStorage.getItem('wellman_bookings') || '[]')
+  }
+  
+  const jsonContent = JSON.stringify(allData, null, 2)
+  downloadFile(jsonContent, `wellman-complete-data-${new Date().toISOString().split('T')[0]}.json`, 'application/json')
+}
+
+// Utility functions for export
+const convertToCSV = (data) => {
+  if (data.length === 0) return ''
+  
+  const headers = Object.keys(data[0])
+  const csvRows = [
+    headers.join(','),
+    ...data.map(row => 
+      headers.map(header => {
+        const value = row[header]
+        return typeof value === 'string' && value.includes(',') 
+          ? `"${value.replace(/"/g, '""')}"` 
+          : value
+      }).join(',')
+    )
+  ]
+  
+  return csvRows.join('\n')
+}
+
+const downloadFile = (content, filename, mimeType) => {
+  const blob = new Blob([content], { type: mimeType })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+// Advanced Analytics
+const generateAnalyticsReport = () => {
+  const report = {
+    generatedAt: new Date().toISOString(),
+    summary: {
+      totalUsers: stats.value.totalUsers,
+      activeUsers: stats.value.activeUsers,
+      totalResources: stats.value.totalResources,
+      totalAppointments: stats.value.totalAppointments,
+      averageRating: stats.value.avgRating
+    },
+    userAnalytics: {
+      roleDistribution: {
+        admin: stats.value.adminUsers,
+        premium: stats.value.premiumUsers,
+        regular: stats.value.totalUsers - stats.value.adminUsers - stats.value.premiumUsers
+      },
+      recentSignups: stats.value.recentUsers,
+      userGrowthRate: stats.value.userGrowth
+    },
+    contentAnalytics: {
+      totalResources: resources.value.length,
+      averageRating: stats.value.avgRating,
+      topCategories: getTopCategories(),
+      mostRatedResources: getMostRatedResources()
+    }
+  }
+  
+  const jsonContent = JSON.stringify(report, null, 2)
+  downloadFile(jsonContent, `wellman-analytics-${new Date().toISOString().split('T')[0]}.json`, 'application/json')
+}
+
+const getTopCategories = () => {
+  const categoryCount = {}
+  resources.value.forEach(resource => {
+    categoryCount[resource.category] = (categoryCount[resource.category] || 0) + 1
+  })
+  return Object.entries(categoryCount)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 5)
+    .map(([category, count]) => ({ category, count }))
+}
+
+const getMostRatedResources = () => {
+  return resources.value
+    .filter(r => r.reviewCount > 0)
+    .sort((a, b) => b.reviewCount - a.reviewCount)
+    .slice(0, 10)
+    .map(r => ({
+      title: r.title,
+      rating: r.rating,
+      reviewCount: r.reviewCount,
+      author: r.author
+    }))
+}
+
 onMounted(() => {
   loadData()
 })
@@ -324,6 +491,15 @@ onMounted(() => {
             @click="activeTab = 'content'"
           >
             <i class="bi bi-file-text me-2"></i>Content Management
+          </button>
+        </li>
+        <li class="nav-item">
+          <button 
+            class="nav-link" 
+            :class="{ active: activeTab === 'export' }"
+            @click="activeTab = 'export'"
+          >
+            <i class="bi bi-download me-2"></i>Data Export
           </button>
         </li>
         <li class="nav-item">
@@ -542,6 +718,122 @@ onMounted(() => {
                       </tr>
                     </tbody>
                   </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Export Tab -->
+      <div v-if="activeTab === 'export'">
+        <div class="row">
+          <div class="col-12">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header">
+                <h5 class="mb-0">
+                  <i class="bi bi-download me-2"></i>Data Export & Analytics
+                </h5>
+                <p class="text-muted mb-0">Export system data and generate analytics reports</p>
+              </div>
+              <div class="card-body">
+                <div class="row g-4">
+                  <!-- Individual Data Exports -->
+                  <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 bg-light">
+                      <div class="card-body text-center">
+                        <i class="bi bi-people text-primary display-4 mb-3"></i>
+                        <h6 class="card-title">Export Users</h6>
+                        <p class="card-text text-muted small">Download user data as CSV</p>
+                        <button class="btn btn-outline-primary btn-sm" @click="exportUsers">
+                          <i class="bi bi-download me-1"></i>Export CSV
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 bg-light">
+                      <div class="card-body text-center">
+                        <i class="bi bi-file-text text-success display-4 mb-3"></i>
+                        <h6 class="card-title">Export Resources</h6>
+                        <p class="card-text text-muted small">Download resource data as CSV</p>
+                        <button class="btn btn-outline-success btn-sm" @click="exportResources">
+                          <i class="bi bi-download me-1"></i>Export CSV
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 bg-light">
+                      <div class="card-body text-center">
+                        <i class="bi bi-calendar-check text-warning display-4 mb-3"></i>
+                        <h6 class="card-title">Export Appointments</h6>
+                        <p class="card-text text-muted small">Download appointment data as CSV</p>
+                        <button class="btn btn-outline-warning btn-sm" @click="exportAppointments">
+                          <i class="bi bi-download me-1"></i>Export CSV
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Complete Data Export -->
+                  <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 bg-primary text-white">
+                      <div class="card-body text-center">
+                        <i class="bi bi-database display-4 mb-3"></i>
+                        <h6 class="card-title">Complete Data Export</h6>
+                        <p class="card-text small">Download all system data as JSON</p>
+                        <button class="btn btn-light btn-sm" @click="exportAllData">
+                          <i class="bi bi-download me-1"></i>Export All
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Analytics Report -->
+                  <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 bg-info text-white">
+                      <div class="card-body text-center">
+                        <i class="bi bi-graph-up display-4 mb-3"></i>
+                        <h6 class="card-title">Analytics Report</h6>
+                        <p class="card-text small">Generate comprehensive analytics</p>
+                        <button class="btn btn-light btn-sm" @click="generateAnalyticsReport">
+                          <i class="bi bi-graph-up me-1"></i>Generate Report
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Export Statistics -->
+                  <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 bg-secondary text-white">
+                      <div class="card-body text-center">
+                        <i class="bi bi-bar-chart display-4 mb-3"></i>
+                        <h6 class="card-title">Export Statistics</h6>
+                        <div class="small">
+                          <div>Users: {{ stats.totalUsers }}</div>
+                          <div>Resources: {{ stats.totalResources }}</div>
+                          <div>Appointments: {{ stats.totalAppointments }}</div>
+                          <div>Avg Rating: {{ stats.avgRating }}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Export Instructions -->
+                <div class="mt-4">
+                  <div class="alert alert-info">
+                    <h6><i class="bi bi-info-circle me-2"></i>Export Information</h6>
+                    <ul class="mb-0 small">
+                      <li><strong>CSV Exports:</strong> Individual data tables in spreadsheet format</li>
+                      <li><strong>Complete Export:</strong> All system data in JSON format for backup/analysis</li>
+                      <li><strong>Analytics Report:</strong> Comprehensive metrics and insights</li>
+                      <li>All exports include timestamps and are ready for external analysis</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
