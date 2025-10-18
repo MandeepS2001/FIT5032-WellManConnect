@@ -12,6 +12,7 @@ const Login = () => import('../views/LoginView.vue')
 const Admin = () => import('../views/AdminView.vue')
 const Profile = () => import('../views/ProfileView.vue')
 const Article = () => import('../views/ArticleView.vue')
+const DataTables = () => import('../views/DataTablesView.vue')
 
 const router = createRouter({
   history: createWebHistory(),
@@ -24,6 +25,7 @@ const router = createRouter({
     { path: '/appointments', name: 'appointments', component: Appointments },
     { path: '/signup', name: 'signup', component: SignUp },
     { path: '/login', name: 'login', component: Login },
+    { path: '/data-tables', name: 'data-tables', component: DataTables },
     
     // Protected pages (require authentication)
     { 
