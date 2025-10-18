@@ -2,7 +2,7 @@
 import { ref, reactive, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { verifyPassword } from '../utils/security'
+import { verifyPassword, loadUserFromStorage } from '../utils/passwordManager'
 
 const router = useRouter()
 const route = useRoute()
@@ -86,17 +86,17 @@ const handleLogin = async () => {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000))
 
-    // Get users from localStorage
-    const users = JSON.parse(localStorage.getItem('wellman_users') || '[]')
-    const user = users.find(u => u.email === formData.email)
+    // Load user from storage with validation
+    const user = loadUserFromStorage(formData.email)
 
     if (!user) {
       loginError.value = 'Invalid email or password'
       return
     }
 
-    // Secure password verification using PBKDF2
+    // Verify password using centralized password manager
     const isValidPassword = await verifyPassword(formData.password, user.password)
+    
     if (!isValidPassword) {
       loginError.value = 'Invalid email or password'
       return
@@ -130,17 +130,21 @@ const handleDemoLogin = async () => {
   const demoUser = users.find(u => u.email === 'demo@wellman.com')
   
   if (!demoUser) {
-    const newDemoUser = {
+    // Import password manager functions
+    const { createStandardUser, saveUserToStorage } = await import('../utils/passwordManager')
+    
+    const demoUserData = {
       id: Date.now(),
       firstName: 'Demo',
       lastName: 'User',
       email: 'demo@wellman.com',
-      password: btoa('Demo123!'),
+      password: 'Demo123!', // Plain text password - will be encoded by createStandardUser
       role: 'user',
       createdAt: new Date().toISOString()
     }
-    users.push(newDemoUser)
-    localStorage.setItem('wellman_users', JSON.stringify(users))
+    
+    const newDemoUser = await createStandardUser(demoUserData)
+    saveUserToStorage(newDemoUser)
   }
   
   await handleLogin()

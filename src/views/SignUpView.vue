@@ -2,7 +2,7 @@
 import { ref, reactive, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { hashPassword } from '../utils/security'
+import { createStandardUser, saveUserToStorage } from '../utils/passwordManager'
 
 const router = useRouter()
 const route = useRoute()
@@ -277,27 +277,28 @@ const handleSignup = async () => {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500))
 
-    // Create new user
-    // Hash password securely
-    const hashedPassword = await hashPassword(formData.password)
-    
-    const newUser = {
+    // Create user data object
+    const userData = {
       id: Date.now(),
       firstName: formData.firstName.trim(),
       lastName: formData.lastName.trim(),
       email: formData.email.toLowerCase(),
-      password: hashedPassword, // Secure PBKDF2 hashing with salt
+      password: formData.password, // Plain text password - will be encoded by createStandardUser
       dateOfBirth: formData.dateOfBirth,
       phoneNumber: formData.phoneNumber,
       role: 'user', // Default role
-      createdAt: new Date().toISOString(),
       lastLogin: null
     }
 
-    // Save user to localStorage
-    const users = JSON.parse(localStorage.getItem('wellman_users') || '[]')
-    users.push(newUser)
-    localStorage.setItem('wellman_users', JSON.stringify(users))
+    // Create user with standardized password encoding
+    const newUser = await createStandardUser(userData)
+    
+    // Save user to localStorage with validation
+    const saved = saveUserToStorage(newUser)
+    
+    if (!saved) {
+      throw new Error('Failed to save user to storage')
+    }
 
     // Auto-login the user
     authStore.login(newUser)
@@ -316,27 +317,44 @@ const handleSignup = async () => {
 
 // Create demo admin account
 const createDemoAdmin = async () => {
-  const hashedPassword = await hashPassword('Admin123!')
-  
-  const adminUser = {
-    id: Date.now() + 1,
-    firstName: 'Admin',
-    lastName: 'User',
-    email: 'admin@wellman.com',
-    password: hashedPassword, // Secure PBKDF2 hashing with salt
-    dateOfBirth: '1990-01-01',
-    phoneNumber: '+1234567890',
-    role: 'admin',
-    createdAt: new Date().toISOString(),
-    lastLogin: null
-  }
+  try {
+    const adminUserData = {
+      id: Date.now() + 1,
+      firstName: 'Admin',
+      lastName: 'User',
+      email: 'admin@wellman.com',
+      password: 'Admin123!', // Plain text password - will be encoded by createStandardUser
+      dateOfBirth: '1990-01-01',
+      phoneNumber: '+1234567890',
+      role: 'admin',
+      lastLogin: null
+    }
 
-  const users = JSON.parse(localStorage.getItem('wellman_users') || '[]')
-  const existingAdmin = users.find(u => u.email === adminUser.email)
-  
-  if (!existingAdmin) {
-    users.push(adminUser)
-    localStorage.setItem('wellman_users', JSON.stringify(users))
+    // Check if admin already exists
+    const users = JSON.parse(localStorage.getItem('wellman_users') || '[]')
+    const existingAdmin = users.find(u => u.email === adminUserData.email)
+    
+    if (existingAdmin) {
+      alert('ℹ️ Admin account already exists!\nEmail: admin@wellman.com\nPassword: Admin123!')
+      console.log('Admin account already exists')
+      return
+    }
+
+    // Create admin user with standardized password encoding
+    const adminUser = await createStandardUser(adminUserData)
+    
+    // Save to storage with validation
+    const saved = saveUserToStorage(adminUser)
+    
+    if (saved) {
+      alert('✅ Admin account created successfully!\nEmail: admin@wellman.com\nPassword: Admin123!')
+      console.log('Admin account created:', adminUser)
+    } else {
+      throw new Error('Failed to save admin user to storage')
+    }
+  } catch (error) {
+    console.error('Error creating admin account:', error)
+    alert('❌ Error creating admin account. Check console for details.')
   }
 }
 </script>

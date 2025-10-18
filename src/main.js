@@ -11,6 +11,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import App from './App.vue'
 import router from './router'
 import { createPinia } from 'pinia'
+import './utils/debugPassword.js' // Load debug utilities for development
 
 const app = createApp(App)
 app.use(createPinia())
