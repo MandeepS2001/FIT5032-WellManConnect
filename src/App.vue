@@ -95,6 +95,9 @@ onMounted(() => {
           <li class="nav-item">
             <RouterLink class="nav-link" to="/data-tables">Data Tables</RouterLink>
           </li>
+          <li class="nav-item">
+            <RouterLink class="nav-link" to="/email">Email Service</RouterLink>
+          </li>
           
           <!-- Authenticated user navigation -->
           <li v-if="isAuthenticated" class="nav-item">

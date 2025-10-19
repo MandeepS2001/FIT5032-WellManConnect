@@ -5,8 +5,8 @@
 
 import sgMail from '@sendgrid/mail'
 
-// SendGrid API Key - In production, this should be an environment variable
-const SENDGRID_API_KEY = 'SG.demo-api-key-replace-with-actual' // Demo key - replace with actual
+// SendGrid API Key - Use environment variable or fallback to demo key
+const SENDGRID_API_KEY = import.meta.env.VITE_SENDGRID_API_KEY || 'SG.demo-api-key-replace-with-actual'
 
 // Configure SendGrid
 sgMail.setApiKey(SENDGRID_API_KEY)
@@ -190,6 +190,29 @@ export const sendNewsletter = async (recipients, subject, content) => {
  */
 export const isEmailServiceConfigured = () => {
   return SENDGRID_API_KEY !== 'SG.demo-api-key-replace-with-actual' && SENDGRID_API_KEY.length > 20
+}
+
+/**
+ * Demo email function for testing without SendGrid
+ * @param {Object} emailData - Email data object
+ * @returns {Promise<Object>} Demo response
+ */
+export const sendDemoEmail = async (emailData) => {
+  // Simulate email sending delay
+  await new Promise(resolve => setTimeout(resolve, 2000))
+  
+  console.log('📧 Demo Email Sent:', {
+    to: emailData.to,
+    subject: emailData.subject,
+    message: emailData.text || emailData.html,
+    attachments: emailData.attachments?.length || 0
+  })
+  
+  return {
+    success: true,
+    messageId: 'demo-' + Date.now(),
+    demo: true
+  }
 }
 
 /**
