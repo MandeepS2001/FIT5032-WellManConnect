@@ -3,6 +3,7 @@ import { ref, reactive, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { createStandardUser, saveUserToStorage } from '../utils/passwordManager'
+import { signUpWithFirebase } from '../services/firebaseAuth'
 
 const router = useRouter()
 const route = useRoute()
@@ -319,42 +320,35 @@ const handleSignup = async () => {
 const createDemoAdmin = async () => {
   try {
     const adminUserData = {
-      id: Date.now() + 1,
       firstName: 'Admin',
       lastName: 'User',
       email: 'admin@wellman.com',
-      password: 'Admin123!', // Plain text password - will be encoded by createStandardUser
+      password: 'Admin123!',
       dateOfBirth: '1990-01-01',
       phoneNumber: '+1234567890',
-      role: 'admin',
-      lastLogin: null
+      role: 'admin'
     }
 
-    // Check if admin already exists
-    const users = JSON.parse(localStorage.getItem('wellman_users') || '[]')
-    const existingAdmin = users.find(u => u.email === adminUserData.email)
+    // Create admin user in Firebase
+    const adminUser = await signUpWithFirebase(
+      adminUserData.email, 
+      adminUserData.password, 
+      adminUserData
+    )
     
-    if (existingAdmin) {
-      alert('ℹ️ Admin account already exists!\nEmail: admin@wellman.com\nPassword: Admin123!')
-      console.log('Admin account already exists')
-      return
-    }
-
-    // Create admin user with standardized password encoding
-    const adminUser = await createStandardUser(adminUserData)
-    
-    // Save to storage with validation
-    const saved = saveUserToStorage(adminUser)
-    
-    if (saved) {
-      alert('✅ Admin account created successfully!\nEmail: admin@wellman.com\nPassword: Admin123!')
-      console.log('Admin account created:', adminUser)
+    if (adminUser) {
+      alert('✅ Admin account created successfully in Firebase!\nEmail: admin@wellman.com\nPassword: Admin123!')
+      console.log('Admin account created in Firebase:', adminUser)
     } else {
-      throw new Error('Failed to save admin user to storage')
+      throw new Error('Failed to create admin user in Firebase')
     }
   } catch (error) {
     console.error('Error creating admin account:', error)
-    alert('❌ Error creating admin account. Check console for details.')
+    if (error.message.includes('already exists')) {
+      alert('ℹ️ Admin account already exists in Firebase!\nEmail: admin@wellman.com\nPassword: Admin123!')
+    } else {
+      alert('❌ Error creating admin account. Check console for details.')
+    }
   }
 }
 </script>

@@ -3,6 +3,7 @@ import { ref, reactive, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { verifyPassword, loadUserFromStorage } from '../utils/passwordManager'
+import { signInWithFirebase } from '../services/firebaseAuth'
 
 const router = useRouter()
 const route = useRoute()
@@ -86,7 +87,27 @@ const handleLogin = async () => {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000))
 
-    // Load user from storage with validation
+    // Try Firebase authentication first
+    try {
+      const user = await signInWithFirebase(formData.email, formData.password)
+      
+      if (user) {
+        // Firebase authentication successful
+        authStore.login(user)
+        
+        // Update user's last login
+        user.lastLogin = new Date().toISOString()
+        
+        // Redirect based on role or intended destination
+        const redirectPath = route.query.redirect || (user.role === 'admin' ? '/admin' : '/account')
+        router.push(redirectPath)
+        return
+      }
+    } catch (firebaseError) {
+      console.log('Firebase auth failed, trying local storage...', firebaseError.message)
+    }
+
+    // Fallback to local storage authentication
     const user = loadUserFromStorage(formData.email)
 
     if (!user) {
