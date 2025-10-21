@@ -18,7 +18,9 @@ npm install
 
 3. Set up environment variables:
 ```bash
-# Create a .env file in the root directory
+# Create a .env.local file in the root directory
+# Copy env.template to .env.local and fill in your values
+# See EMAIL_SETUP.md for SendGrid configuration
 # See ENVIRONMENT_SETUP.md for detailed configuration
 ```
 
