@@ -334,17 +334,22 @@ const sendEmail = async () => {
   isSending.value = true
 
   try {
-    const emailData = {
-      to: emailForm.to,
-      subject: emailForm.subject,
-      text: emailForm.message,
-      html: emailForm.message.replace(/\n/g, '<br>'),
-      attachments: emailForm.attachments.map(file => ({
+    // Convert attachments to base64
+    const attachments = await Promise.all(
+      emailForm.attachments.map(async file => ({
         filename: file.name,
         content: await fileToBase64(file),
         type: file.type,
         disposition: 'attachment'
       }))
+    )
+
+    const emailData = {
+      to: emailForm.to,
+      subject: emailForm.subject,
+      text: emailForm.message,
+      html: emailForm.message.replace(/\n/g, '<br>'),
+      attachments: attachments
     }
 
     let result
