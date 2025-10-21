@@ -32,7 +32,7 @@ export const sendEmailWithAttachment = async (emailData) => {
   try {
     const msg = {
       to: emailData.to,
-      from: emailData.from || 'noreply@wellmanconnect.com',
+      from: emailData.from || 'mdan0028@student.monash.edu',
       subject: emailData.subject,
       text: emailData.text,
       html: emailData.html,
