@@ -122,7 +122,7 @@ onMounted(() => {
 
 <style scoped>
 .hero-edge-to-edge {
-  background: linear-gradient(135deg, var(--primary-light) 0%, var(--light) 100%);
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   padding: 4rem 0;
   margin-left: calc(-50vw + 50%);
   margin-right: calc(-50vw + 50%);
@@ -143,7 +143,7 @@ onMounted(() => {
 }
 
 .hero-edge-to-edge h1 {
-  color: var(--gray-900);
+  color: #1e293b;
   font-size: clamp(2rem, 5vw, 3.5rem);
   font-weight: 800;
   line-height: 1.1;
@@ -151,7 +151,7 @@ onMounted(() => {
 }
 
 .hero-edge-to-edge .lead {
-  color: var(--gray-600);
+  color: #475569;
   font-size: clamp(1rem, 2.5vw, 1.25rem);
   margin-bottom: 2rem;
   max-width: 600px;
@@ -159,14 +159,14 @@ onMounted(() => {
 
 .eyebrow {
   display: inline-block;
-  background: var(--success);
-  color: var(--white);
+  background: #10b981;
+  color: #ffffff;
   padding: 0.5rem 1rem;
   border-radius: 999px;
   font-size: 0.875rem;
   font-weight: 600;
   margin-bottom: 1.5rem;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .object-fit-cover {
