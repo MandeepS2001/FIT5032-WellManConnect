@@ -532,7 +532,14 @@ const quickSearch = async (category) => {
   try {
     isLoading.value = true
     selectedCategory.value = category
-    searchQuery.value = healthCategories.value.find(c => c.key === category)?.name || category
+    
+    // Debug logging
+    console.log('🔍 Quick search for category:', category)
+    console.log('🔍 healthCategories.value:', healthCategories.value)
+    
+    // Find the category name from the healthCategories array
+    const categoryObj = healthCategories.value.find(c => c.key === category)
+    searchQuery.value = categoryObj ? categoryObj.name : category
     
     const results = await mappingService.searchPlaces(
       searchQuery.value,
@@ -706,8 +713,8 @@ onMounted(async () => {
   try {
     await initializeMap()
     
-    // Load health categories
-    healthCategories.value = mappingService.getHealthCategories()
+    // Health categories are already defined in the component
+    console.log('🗺️ Health categories loaded:', healthCategories.value)
     
     // Listen for place selection events
     window.addEventListener('placeSelected', handlePlaceSelected)
