@@ -74,7 +74,8 @@ export const sendEmailWithFormspree = async (emailData) => {
     formData.append('_replyto', 'mdan0028@student.monash.edu')
     formData.append('_subject', `WellMan Connect: ${emailData.subject}`)
 
-    const response = await fetch('https://formspree.io/f/xpwgqjqe', {
+    // Try a different Formspree endpoint
+    const response = await fetch('https://formspree.io/f/mkglqjqe', {
       method: 'POST',
       body: formData,
       headers: {
