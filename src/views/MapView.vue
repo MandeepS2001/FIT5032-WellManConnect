@@ -393,6 +393,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { mappingService } from '../services/mappingService'
+import * as bootstrap from 'bootstrap'
 
 // Reactive data
 const isLoadingMap = ref(true)
@@ -458,10 +459,11 @@ const initializeMap = async () => {
     isLoadingMap.value = true
     
     // Initialize the map
-    await mappingService.initializeMap('mapContainer', {
-      center: [-74.006, 40.7128], // Default to NYC
+    const mapInstance = await mappingService.initializeMap('mapContainer', {
+      center: { lat: 40.7128, lng: -74.006 }, // Default to NYC
       zoom: 12
     })
+
 
     // Get user location
     await getCurrentLocation()
@@ -470,7 +472,7 @@ const initializeMap = async () => {
     console.log('🗺️ Map initialized successfully')
   } catch (error) {
     console.error('🗺️ Failed to initialize map:', error)
-    errorMessage.value = 'Failed to initialize map. Please check your internet connection and try again.'
+    errorMessage.value = 'Failed to initialize map. Please check your internet connection and API configuration.'
     showErrorModal()
     isLoadingMap.value = false
   }
@@ -480,12 +482,12 @@ const getCurrentLocation = async () => {
   try {
     isLoadingLocation.value = true
     
-    const location = await mappingService.getUserLocation()
+    const location = await mappingService.getCurrentLocation()
     userLocation.value = location
     
     // Center map on user location
     if (mappingService.map) {
-      mappingService.setMapView(location, 15)
+      mappingService.setMapView(location.latitude, location.longitude, 15)
     }
     
     console.log('📍 User location obtained:', location)
@@ -504,18 +506,12 @@ const performSearch = async () => {
   try {
     isLoading.value = true
     
-    const results = await mappingService.searchHealthPlaces(
+    const results = await mappingService.searchPlaces(
       searchQuery.value,
-      'healthcare',
-      userLocation.value
+      selectedCategory.value
     )
     
     searchResults.value = results
-    
-    // Add markers to map
-    if (results.length > 0) {
-      mappingService.addMarkers(results)
-    }
     
     console.log(`🔍 Search completed: ${results.length} results found`)
   } catch (error) {
@@ -530,19 +526,15 @@ const performSearch = async () => {
 const quickSearch = async (category) => {
   try {
     isLoading.value = true
+    selectedCategory.value = category
     searchQuery.value = healthCategories.value.find(c => c.key === category)?.name || category
     
-    const results = await mappingService.searchHealthFacilities(
-      category,
-      userLocation.value
+    const results = await mappingService.searchPlaces(
+      searchQuery.value,
+      category
     )
     
     searchResults.value = results
-    
-    // Add markers to map
-    if (results.length > 0) {
-      mappingService.addMarkers(results, { color: getCategoryColor(category) })
-    }
     
     console.log(`🔍 Quick search completed for ${category}: ${results.length} results`)
   } catch (error) {
@@ -573,11 +565,21 @@ const navigateToPlace = async (place) => {
   }
   
   try {
-    const route = await mappingService.navigateToPlace(place.id)
+    const origin = {
+      lat: userLocation.value.latitude,
+      lng: userLocation.value.longitude
+    }
+    
+    const destination = {
+      lat: place.coordinates[1],
+      lng: place.coordinates[0]
+    }
+    
+    const route = await mappingService.planTrip(origin, destination, 'DRIVING')
     console.log('🧭 Navigation started to:', place.name)
   } catch (error) {
     console.error('🧭 Navigation failed:', error)
-    errorMessage.value = 'Failed to get directions. Please try again.'
+    errorMessage.value = error.message || 'Failed to get directions. Please try again.'
     showErrorModal()
   }
 }
@@ -588,31 +590,35 @@ const planTrip = async () => {
   try {
     isPlanningTrip.value = true
     
-    const tripData = {
-      type: tripForm.value.type,
-      name: tripForm.value.name,
-      scheduledTime: tripForm.value.scheduledTime,
-      transportation: tripForm.value.transportation,
-      origin: userLocation.value,
-      destination: selectedPlace.value.coordinates
+    if (!selectedPlace.value) {
+      throw new Error('Please select a destination first')
     }
     
-    // Create trip
-    const trip = mappingService.createHealthTrip(tripData)
-    
-    // Get trip information with route
-    const tripInfo = await mappingService.getTripInformation(trip)
-    currentTrip.value = tripInfo
-    
-    // Add route to map
-    if (tripInfo.route) {
-      mappingService.addRoute(tripInfo.route, { color: '#dc3545' })
+    if (!userLocation.value) {
+      throw new Error('Please get your current location first')
     }
     
-    console.log('🏥 Trip planned successfully:', tripInfo)
+    const origin = {
+      lat: userLocation.value.latitude,
+      lng: userLocation.value.longitude
+    }
+    
+    const destination = {
+      lat: selectedPlace.value.coordinates[1],
+      lng: selectedPlace.value.coordinates[0]
+    }
+    
+    const trip = await mappingService.planTrip(
+      origin,
+      destination,
+      tripForm.value.transportation || 'DRIVING'
+    )
+    
+    currentTrip.value = trip
+    console.log('🏥 Trip planned successfully:', trip)
   } catch (error) {
     console.error('🏥 Trip planning failed:', error)
-    errorMessage.value = 'Failed to plan trip. Please try again.'
+    errorMessage.value = error.message || 'Failed to plan trip. Please try again.'
     showErrorModal()
   } finally {
     isPlanningTrip.value = false
@@ -621,7 +627,7 @@ const planTrip = async () => {
 
 const clearTrip = () => {
   currentTrip.value = null
-  mappingService.clearRoutes()
+  mappingService.clearTrip()
   
   // Reset form
   tripForm.value = {
@@ -636,7 +642,7 @@ const clearTrip = () => {
 
 const clearMap = () => {
   mappingService.clearMarkers()
-  mappingService.clearRoutes()
+  mappingService.clearTrip()
   searchResults.value = []
   selectedPlace.value = null
   currentTrip.value = null
@@ -679,13 +685,37 @@ const showErrorModal = () => {
   modal.show()
 }
 
+// Event handlers
+const handlePlaceSelected = (event) => {
+  const place = event.detail
+  selectPlace(place)
+}
+
 // Lifecycle hooks
 onMounted(async () => {
-  await initializeMap()
+  try {
+    await initializeMap()
+    
+    // Load health categories
+    healthCategories.value = mappingService.getHealthCategories()
+    
+    // Listen for place selection events
+    window.addEventListener('placeSelected', handlePlaceSelected)
+    
+    console.log('🗺️ MapView mounted successfully')
+  } catch (error) {
+    console.error('🗺️ Failed to mount MapView:', error)
+    errorMessage.value = 'Failed to initialize map. Please refresh the page.'
+    showErrorModal()
+  }
 })
 
 onUnmounted(() => {
-  if (mappingService.map) {
+  // Clean up event listeners
+  window.removeEventListener('placeSelected', handlePlaceSelected)
+  
+  // Clean up mapping service
+  if (mappingService) {
     mappingService.destroy()
   }
 })
