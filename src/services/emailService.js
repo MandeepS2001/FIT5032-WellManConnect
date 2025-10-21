@@ -13,6 +13,7 @@
 
 import { sendEmailWithFallback, loadEmailJS } from './alternativeEmailService.js'
 import { sendEmailWithSimpleFallback } from './simpleEmailService.js'
+import { sendEmailWithGuaranteedFallback } from './guaranteedEmailService.js'
 
 // SendGrid API Key - Use environment variable only
 const SENDGRID_API_KEY = import.meta.env.VITE_SENDGRID_API_KEY
@@ -86,19 +87,25 @@ export const sendEmailWithAttachment = async (emailData) => {
   } catch (error) {
     console.error('📧 Email service error:', error)
     
-    // Try simple email services first, then alternative services, then demo mode
+    // Try guaranteed working services first, then simple services, then alternative services, then demo mode
     try {
-      console.log('📧 Trying simple email services...')
-      return await sendEmailWithSimpleFallback(emailData)
-    } catch (simpleError) {
-      console.warn('📧 Simple email services failed, trying alternative services:', simpleError.message)
+      console.log('📧 Trying guaranteed working email services...')
+      return await sendEmailWithGuaranteedFallback(emailData)
+    } catch (guaranteedError) {
+      console.warn('📧 Guaranteed email services failed, trying simple services:', guaranteedError.message)
       try {
-        console.log('📧 Trying alternative email services...')
-        return await sendEmailWithFallback(emailData)
-      } catch (fallbackError) {
-        console.error('📧 All email services failed:', fallbackError)
-        console.log('📧 Falling back to demo mode due to email service error')
-        return await sendDemoEmail(emailData)
+        console.log('📧 Trying simple email services...')
+        return await sendEmailWithSimpleFallback(emailData)
+      } catch (simpleError) {
+        console.warn('📧 Simple email services failed, trying alternative services:', simpleError.message)
+        try {
+          console.log('📧 Trying alternative email services...')
+          return await sendEmailWithFallback(emailData)
+        } catch (fallbackError) {
+          console.error('📧 All email services failed:', fallbackError)
+          console.log('📧 Falling back to demo mode due to email service error')
+          return await sendDemoEmail(emailData)
+        }
       }
     }
   }
