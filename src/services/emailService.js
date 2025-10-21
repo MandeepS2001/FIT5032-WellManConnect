@@ -46,7 +46,7 @@ export const sendEmailWithAttachment = async (emailData) => {
     }
 
     const result = await response.json()
-    console.log('Email sent successfully via API')
+    console.log('Email sent successfully via API:', result)
     return { success: true, messageId: result.messageId }
   } catch (error) {
     console.error('Email API error:', error)
