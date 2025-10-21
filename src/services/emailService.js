@@ -23,6 +23,12 @@ sgMail.setApiKey(SENDGRID_API_KEY)
  * @returns {Promise<Object>} SendGrid response
  */
 export const sendEmailWithAttachment = async (emailData) => {
+  // Check if SendGrid is properly configured
+  if (!isEmailServiceConfigured()) {
+    console.log('SendGrid not configured, using demo mode')
+    return await sendDemoEmail(emailData)
+  }
+
   try {
     const msg = {
       to: emailData.to,
@@ -38,7 +44,8 @@ export const sendEmailWithAttachment = async (emailData) => {
     return { success: true, messageId: response[0].headers['x-message-id'] }
   } catch (error) {
     console.error('SendGrid email error:', error)
-    throw new Error(`Failed to send email: ${error.message}`)
+    console.log('Falling back to demo mode due to SendGrid error')
+    return await sendDemoEmail(emailData)
   }
 }
 

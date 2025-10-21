@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { createStandardUser, saveUserToStorage } from '../utils/passwordManager'
 import { signUpWithFirebase } from '../services/firebaseAuth'
+import { sendWelcomeEmail } from '../services/emailService'
 
 const router = useRouter()
 const route = useRoute()
@@ -303,6 +304,15 @@ const handleSignup = async () => {
 
     // Auto-login the user
     authStore.login(newUser)
+
+    // Send welcome email
+    try {
+      await sendWelcomeEmail(newUser.email, `${newUser.firstName} ${newUser.lastName}`)
+      console.log('Welcome email sent successfully')
+    } catch (emailError) {
+      console.warn('Failed to send welcome email:', emailError)
+      // Don't fail the signup process if email fails
+    }
 
     // Redirect to account page or intended destination
     const redirectPath = route.query.redirect || '/account'

@@ -13,6 +13,7 @@ import {
 } from 'firebase/auth'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { auth, db } from '../config/firebase'
+import { sendWelcomeEmail } from './emailService'
 
 /**
  * Sign in with email and password
@@ -74,6 +75,15 @@ export const signUpWithFirebase = async (email, password, userData = {}) => {
     }
     
     await setDoc(doc(db, 'users', user.uid), userDocData)
+    
+    // Send welcome email
+    try {
+      await sendWelcomeEmail(user.email, `${userData.firstName} ${userData.lastName}`)
+      console.log('Welcome email sent successfully')
+    } catch (emailError) {
+      console.warn('Failed to send welcome email:', emailError)
+      // Don't fail the signup process if email fails
+    }
     
     return userDocData
   } catch (error) {
