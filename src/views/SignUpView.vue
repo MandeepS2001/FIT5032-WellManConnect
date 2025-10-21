@@ -276,34 +276,25 @@ const handleSignup = async () => {
   signupError.value = ''
 
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
-
-    // Create user data object
+    // Create user data object for Firebase
     const userData = {
-      id: Date.now(),
       firstName: formData.firstName.trim(),
       lastName: formData.lastName.trim(),
       email: formData.email.toLowerCase(),
-      password: formData.password, // Plain text password - will be encoded by createStandardUser
+      password: formData.password,
       dateOfBirth: formData.dateOfBirth,
       phoneNumber: formData.phoneNumber,
-      role: 'user', // Default role
-      lastLogin: null
+      role: 'user' // Default role
     }
 
-    // Create user with standardized password encoding
-    const newUser = await createStandardUser(userData)
+    // Create user with Firebase Authentication
+    const newUser = await signUpWithFirebase(userData.email, userData.password, userData)
     
-    // Save user to localStorage with validation
-    const saved = saveUserToStorage(newUser)
-    
-    if (!saved) {
-      throw new Error('Failed to save user to storage')
-    }
-
-    // Auto-login the user
-    authStore.login(newUser)
+    // Auto-login the user in the auth store
+    authStore.login({
+      ...newUser,
+      id: newUser.uid // Add id field for compatibility
+    })
 
     // Send welcome email
     try {
