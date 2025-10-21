@@ -408,6 +408,7 @@ const errorMessage = ref('')
 const searchQuery = ref('')
 const searchResults = ref([])
 const selectedPlace = ref(null)
+const selectedCategory = ref('')
 
 // Location data
 const userLocation = ref(null)
@@ -500,6 +501,10 @@ const getCurrentLocation = async () => {
   }
 }
 
+const handleMyLocationClick = async () => {
+  await getCurrentLocation()
+}
+
 const performSearch = async () => {
   if (!searchQuery.value.trim()) return
   
@@ -551,7 +556,7 @@ const selectPlace = (place) => {
   
   // Center map on selected place
   if (mappingService.map) {
-    mappingService.setMapView(place.coordinates, 16)
+    mappingService.setMapView(place.coordinates[1], place.coordinates[0], 16)
   }
   
   console.log('📍 Place selected:', place.name)
@@ -640,32 +645,6 @@ const clearTrip = () => {
   console.log('🏥 Trip cleared')
 }
 
-const clearMap = () => {
-  mappingService.clearMarkers()
-  mappingService.clearTrip()
-  searchResults.value = []
-  selectedPlace.value = null
-  currentTrip.value = null
-  
-  console.log('🗺️ Map cleared')
-}
-
-const fitMapToResults = () => {
-  if (searchResults.value.length > 0) {
-    mappingService.fitMapToMarkers(searchResults.value)
-  }
-}
-
-const toggleMapControls = () => {
-  showMapControls.value = !showMapControls.value
-}
-
-const toggleTrafficLayer = () => {
-  showTraffic.value = !showTraffic.value
-  // In a real implementation, you would toggle traffic layer on the map
-  console.log('🚦 Traffic layer toggled:', showTraffic.value)
-}
-
 const getCategoryColor = (category) => {
   const colors = {
     hospitals: '#dc3545',
@@ -678,6 +657,37 @@ const getCategoryColor = (category) => {
     wellness: '#e83e8c'
   }
   return colors[category] || '#2563eb'
+}
+
+const clearMap = () => {
+  mappingService.clearMarkers()
+  mappingService.clearTrip()
+  searchResults.value = []
+  selectedPlace.value = null
+  currentTrip.value = null
+  
+  console.log('🗺️ Map cleared')
+}
+
+const fitMapToResults = () => {
+  if (searchResults.value.length > 0 && mappingService.map) {
+    // Fit map to show all search results
+    const bounds = new window.google.maps.LatLngBounds()
+    searchResults.value.forEach(place => {
+      bounds.extend(new window.google.maps.LatLng(place.coordinates[1], place.coordinates[0]))
+    })
+    mappingService.map.fitBounds(bounds)
+  }
+}
+
+const toggleMapControls = () => {
+  showMapControls.value = !showMapControls.value
+}
+
+const toggleTrafficLayer = () => {
+  showTraffic.value = !showTraffic.value
+  mappingService.toggleTraffic()
+  console.log('🚦 Traffic layer toggled:', showTraffic.value)
 }
 
 const showErrorModal = () => {
