@@ -12,14 +12,14 @@
  */
 
 // SendGrid API Key - Use environment variable or fallback to demo key
-const SENDGRID_API_KEY = import.meta.env.VITE_SENDGRID_API_KEY || 'SG.demo-api-key-replace-with-actual'
+const SENDGRID_API_KEY = import.meta.env.VITE_SENDGRID_API_KEY || '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'
 
 /**
  * Check if email service is configured with a real API key
  * @returns {boolean} True if a real API key is present
  */
 export const isEmailServiceConfigured = () => {
-  return SENDGRID_API_KEY !== 'SG.demo-api-key-replace-with-actual' && SENDGRID_API_KEY.length > 20
+  return SENDGRID_API_KEY !== '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' && SENDGRID_API_KEY.length > 20
 }
 
 /**

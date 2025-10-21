@@ -27,6 +27,17 @@ const handleLogout = () => {
   authStore.logout()
 }
 
+// Mobile menu collapse function
+const collapseMobileMenu = () => {
+  const navbarCollapse = document.getElementById('navbarNav')
+  if (navbarCollapse && navbarCollapse.classList.contains('show')) {
+    const bsCollapse = new bootstrap.Collapse(navbarCollapse, {
+      toggle: false
+    })
+    bsCollapse.hide()
+  }
+}
+
 onMounted(() => {
   // Initialize authentication
   authStore.initializeAuth()
@@ -63,9 +74,9 @@ onMounted(() => {
 
   <nav class="navbar navbar-expand-lg sticky-top" role="navigation" aria-label="Main navigation">
     <div class="container">
-      <div class="navbar-brand">
+      <RouterLink to="/" class="navbar-brand">
         <span class="text-primary">WellMan</span> Connect
-      </div>
+      </RouterLink>
       <button
         class="navbar-toggler"
         type="button"
@@ -78,43 +89,43 @@ onMounted(() => {
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0" role="menubar">
+        <ul class="navbar-nav mx-auto mb-2 mb-lg-0" role="menubar">
           <li class="nav-item">
-            <RouterLink class="nav-link" to="/">Home</RouterLink>
+            <RouterLink class="nav-link" to="/" @click="collapseMobileMenu">Home</RouterLink>
           </li>
           <li class="nav-item">
-            <RouterLink class="nav-link" to="/resources">Health & Resources</RouterLink>
+            <RouterLink class="nav-link" to="/resources" @click="collapseMobileMenu">Health & Resources</RouterLink>
           </li>
           <li class="nav-item">
-            <RouterLink class="nav-link" to="/tools">Tools & Trackers</RouterLink>
+            <RouterLink class="nav-link" to="/tools" @click="collapseMobileMenu">Tools & Trackers</RouterLink>
           </li>
           <li class="nav-item">
-            <RouterLink class="nav-link" to="/appointments">Book an Appointment</RouterLink>
+            <RouterLink class="nav-link" to="/appointments" @click="collapseMobileMenu">Book an Appointment</RouterLink>
           </li>
           <!-- Admin-only navigation items -->
           <li v-if="isAdmin" class="nav-item">
-            <RouterLink class="nav-link" to="/data-tables">Data Tables</RouterLink>
+            <RouterLink class="nav-link" to="/data-tables" @click="collapseMobileMenu">Data Tables</RouterLink>
           </li>
           <li v-if="isAdmin" class="nav-item">
-            <RouterLink class="nav-link" to="/email">Email Service</RouterLink>
+            <RouterLink class="nav-link" to="/email" @click="collapseMobileMenu">Email Service</RouterLink>
           </li>
           <li v-if="isAdmin" class="nav-item">
-            <RouterLink class="nav-link" to="/email-composer">Email Composer</RouterLink>
+            <RouterLink class="nav-link" to="/email-composer" @click="collapseMobileMenu">Email Composer</RouterLink>
           </li>
           
           <!-- Authenticated user navigation -->
           <li v-if="isAuthenticated" class="nav-item">
-            <RouterLink class="nav-link" to="/account">My Account</RouterLink>
+            <RouterLink class="nav-link" to="/account" @click="collapseMobileMenu">My Account</RouterLink>
           </li>
           
           <!-- Admin navigation -->
           <li v-if="isAdmin" class="nav-item">
-            <RouterLink class="nav-link" to="/admin">Admin Panel</RouterLink>
+            <RouterLink class="nav-link" to="/admin" @click="collapseMobileMenu">Admin Panel</RouterLink>
           </li>
         </ul>
         
         <!-- Authentication buttons -->
-        <div class="d-flex gap-3 align-items-center">
+        <div class="d-flex gap-3 align-items-center justify-content-center">
           <!-- User info when authenticated -->
           <div v-if="isAuthenticated" class="d-flex align-items-center gap-2 me-3">
             <div class="text-end d-none d-md-block">
@@ -135,13 +146,13 @@ onMounted(() => {
                 <span class="d-none d-sm-inline">Menu</span>
               </button>
               <ul class="dropdown-menu">
-                <li><RouterLink class="dropdown-item" to="/profile">
+                <li><RouterLink class="dropdown-item" to="/profile" @click="collapseMobileMenu">
                   <i class="bi bi-person me-2"></i>Profile
                 </RouterLink></li>
-                <li><RouterLink class="dropdown-item" to="/account">
+                <li><RouterLink class="dropdown-item" to="/account" @click="collapseMobileMenu">
                   <i class="bi bi-gear me-2"></i>Settings
                 </RouterLink></li>
-                <li v-if="isAdmin"><RouterLink class="dropdown-item" to="/admin">
+                <li v-if="isAdmin"><RouterLink class="dropdown-item" to="/admin" @click="collapseMobileMenu">
                   <i class="bi bi-shield-check me-2"></i>Admin Panel
                 </RouterLink></li>
                 <li><hr class="dropdown-divider"></li>
@@ -213,11 +224,18 @@ onMounted(() => {
 .navbar-brand {
   color: #111827 !important;
   font-weight: 700;
+  text-decoration: none;
+}
+
+.navbar-brand:hover {
+  color: #111827 !important;
+  text-decoration: none;
 }
 
 .navbar-nav .nav-link {
   color: #4b5563 !important;
   font-weight: 500;
+  margin: 0 0.25rem;
 }
 
 .navbar-nav .nav-link:hover {
@@ -264,6 +282,31 @@ footer strong {
 .btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(37, 99, 235, 0.15);
+}
+
+/* Better alignment for auth buttons */
+.d-flex.gap-3.align-items-center.justify-content-center {
+  min-width: 200px;
+  justify-content: flex-end !important;
+}
+
+/* Center the navigation menu */
+.navbar-nav.mx-auto {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+@media (max-width: 991px) {
+  .d-flex.gap-3.align-items-center.justify-content-center {
+    justify-content: center !important;
+    width: 100%;
+    margin-top: 1rem;
+  }
+  
+  .navbar-nav.mx-auto {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
 }
 
 .loading-overlay {
