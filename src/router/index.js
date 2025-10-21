@@ -15,6 +15,7 @@ const Article = () => import('../views/ArticleView.vue')
 const DataTables = () => import('../views/DataTablesView.vue')
 const Email = () => import('../views/EmailView.vue')
 const EmailComposer = () => import('../views/EmailComposerView.vue')
+const Map = () => import('../views/MapView.vue')
 
 const router = createRouter({
   history: createWebHistory(),
@@ -25,6 +26,7 @@ const router = createRouter({
     { path: '/article/:id', name: 'article', component: Article },
     { path: '/tools', name: 'tools', component: Tools },
     { path: '/appointments', name: 'appointments', component: Appointments },
+    { path: '/map', name: 'map', component: Map },
     { path: '/signup', name: 'signup', component: SignUp },
     { path: '/login', name: 'login', component: Login },
     

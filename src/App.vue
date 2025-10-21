@@ -225,6 +225,17 @@ onMounted(() => {
               Book an Appointment
             </RouterLink>
           </li>
+          <li class="nav-item" role="none">
+            <RouterLink 
+              class="nav-link" 
+              to="/map" 
+              @click="collapseMobileMenu"
+              role="menuitem"
+              aria-label="Find health facilities and plan trips"
+            >
+              Health Map
+            </RouterLink>
+          </li>
           <!-- Admin-only navigation items -->
           <li v-if="isAdmin" class="nav-item" role="none">
             <RouterLink 
