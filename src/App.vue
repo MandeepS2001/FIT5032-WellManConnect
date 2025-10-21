@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import { useAuthStore } from './stores/auth'
 import { useRoute } from 'vue-router'
 
@@ -28,14 +28,46 @@ const handleLogout = () => {
 }
 
 // Mobile menu collapse function
-const collapseMobileMenu = () => {
-  const navbarCollapse = document.getElementById('navbarNav')
-  if (navbarCollapse && navbarCollapse.classList.contains('show')) {
-    const bsCollapse = new bootstrap.Collapse(navbarCollapse, {
-      toggle: false
-    })
-    bsCollapse.hide()
-  }
+const collapseMobileMenu = async () => {
+  // Wait for Vue to update the DOM
+  await nextTick()
+  
+  // Add a small delay to ensure the navigation happens first
+  setTimeout(() => {
+    const navbarCollapse = document.getElementById('navbarNav')
+    const navbarToggler = document.querySelector('.navbar-toggler')
+    
+    if (navbarCollapse && navbarCollapse.classList.contains('show')) {
+      // Method 1: Use Bootstrap's collapse method
+      if (typeof bootstrap !== 'undefined' && bootstrap.Collapse) {
+        try {
+          const bsCollapse = new bootstrap.Collapse(navbarCollapse, {
+            toggle: false
+          })
+          bsCollapse.hide()
+        } catch (error) {
+          console.log('Bootstrap collapse error, using fallback:', error)
+          // Fallback to manual method
+          navbarCollapse.classList.remove('show')
+          if (navbarToggler) {
+            navbarToggler.setAttribute('aria-expanded', 'false')
+          }
+        }
+      } 
+      // Method 2: Use data attributes to trigger collapse
+      else if (navbarToggler) {
+        navbarToggler.click()
+      }
+      // Method 3: Manual fallback
+      else {
+        navbarCollapse.classList.remove('show')
+        navbarCollapse.classList.remove('collapsing')
+        if (navbarToggler) {
+          navbarToggler.setAttribute('aria-expanded', 'false')
+        }
+      }
+    }
+  }, 150)
 }
 
 onMounted(() => {
