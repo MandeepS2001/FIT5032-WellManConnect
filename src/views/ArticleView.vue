@@ -543,7 +543,7 @@ onMounted(() => {
   font-size: 2.5rem;
   font-weight: 800;
   line-height: 1.2;
-  color: var(--gray-900);
+  color: #000000 !important;
 }
 
 .article-meta {
@@ -571,7 +571,7 @@ onMounted(() => {
 .content-text {
   font-size: 1.1rem;
   line-height: 1.7;
-  color: var(--gray-700);
+  color: #000000 !important;
 }
 
 .review-item {
@@ -587,6 +587,44 @@ onMounted(() => {
 
 .modal.show {
   background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Force all text to be black and visible */
+.article-content h1, 
+.article-content h2, 
+.article-content h3, 
+.article-content h4, 
+.article-content h5, 
+.article-content h6, 
+.article-content p, 
+.article-content span, 
+.article-content div,
+.article-content a,
+.breadcrumb,
+.breadcrumb-item,
+.article-meta,
+.article-author,
+.rating-summary {
+  color: #000000 !important;
+}
+
+/* Fix breadcrumb links */
+.breadcrumb-item a {
+  color: #2563eb !important;
+}
+
+.breadcrumb-item.active {
+  color: #000000 !important;
+}
+
+/* Fix text-muted elements */
+.text-muted {
+  color: #6c757d !important;
+}
+
+/* Fix rating stars */
+.text-warning, .stars {
+  color: #f59e0b !important;
 }
 
 @media (max-width: 768px) {

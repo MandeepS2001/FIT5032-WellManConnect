@@ -11,7 +11,7 @@
                   <i class="bi bi-person-fill text-white fs-4"></i>
                 </div>
               </div>
-              <div>
+  <div>
                 <h2 class="mb-1">Welcome, {{ currentUser?.firstName || 'User' }}!</h2>
                 <p class="text-muted mb-0">{{ currentUser?.email }}</p>
                 <span class="badge" :class="{
