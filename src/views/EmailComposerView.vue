@@ -102,8 +102,10 @@
                       type="button"
                       class="btn btn-sm btn-outline-danger"
                       @click="removeAttachment(index)"
+                      title="Remove attachment"
+                      aria-label="Remove attachment"
                     >
-                      <i class="bi bi-x"></i>
+                      <i class="bi bi-x me-1"></i>Remove
                     </button>
                   </div>
                 </div>

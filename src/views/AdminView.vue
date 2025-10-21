@@ -685,15 +685,22 @@ onMounted(() => {
                     <td>{{ user.lastLoginFormatted }}</td>
                     <td>
                       <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-primary" @click="editUser(user)">
-                          <i class="bi bi-pencil"></i>
+                        <button 
+                          class="btn btn-outline-primary" 
+                          @click="editUser(user)"
+                          title="Edit user"
+                          aria-label="Edit user"
+                        >
+                          <i class="bi bi-pencil me-1"></i>Edit
                         </button>
                         <button 
                           class="btn btn-outline-danger" 
                           @click="deleteUser(user.id)"
                           :disabled="user.id === authStore.currentUser?.id"
+                          title="Delete user"
+                          aria-label="Delete user"
                         >
-                          <i class="bi bi-trash"></i>
+                          <i class="bi bi-trash me-1"></i>Delete
                         </button>
                       </div>
                     </td>
@@ -782,8 +789,13 @@ onMounted(() => {
                           </div>
                         </td>
                         <td>
-                          <button class="btn btn-outline-danger btn-sm" @click="deleteResource(resource.id)">
-                            <i class="bi bi-trash"></i>
+                          <button 
+                            class="btn btn-outline-danger btn-sm" 
+                            @click="deleteResource(resource.id)"
+                            title="Delete resource"
+                            aria-label="Delete resource"
+                          >
+                            <i class="bi bi-trash me-1"></i>Delete
                           </button>
                         </td>
                       </tr>
@@ -940,11 +952,19 @@ onMounted(() => {
                     </td>
                     <td>
                       <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-success">
-                          <i class="bi bi-check"></i>
+                        <button 
+                          class="btn btn-outline-success"
+                          title="Approve review"
+                          aria-label="Approve review"
+                        >
+                          <i class="bi bi-check me-1"></i>Approve
                         </button>
-                        <button class="btn btn-outline-danger">
-                          <i class="bi bi-x"></i>
+                        <button 
+                          class="btn btn-outline-danger"
+                          title="Reject review"
+                          aria-label="Reject review"
+                        >
+                          <i class="bi bi-x me-1"></i>Reject
                         </button>
                       </div>
                     </td>
