@@ -41,53 +41,36 @@ export const sendEmailWithAttachment = async (emailData) => {
       return await sendDemoEmail(emailData)
     }
 
-    // Prepare the email data for SendGrid
-    const msg = {
+    console.log('📧 Sending email via serverless function:', {
       to: emailData.to,
-      from: emailData.from || 'mdan0028@student.monash.edu', // Use verified sender
       subject: emailData.subject,
-      text: emailData.text,
-      html: emailData.html,
-      attachments: emailData.attachments || []
-    }
-
-    console.log('📧 Sending email via SendGrid:', {
-      to: msg.to,
-      from: msg.from,
-      subject: msg.subject,
-      attachments: msg.attachments.length
+      attachments: emailData.attachments?.length || 0
     })
 
-    // Send email using SendGrid API
-    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+    // Send email using our serverless function (bypasses CORS)
+    const response = await fetch('/api/send-email', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${SENDGRID_API_KEY}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(msg)
+      body: JSON.stringify(emailData)
     })
 
     if (!response.ok) {
-      const errorData = await response.text()
-      throw new Error(`SendGrid API error: ${response.status} - ${errorData}`)
+      const errorData = await response.json()
+      throw new Error(`Serverless function error: ${response.status} - ${errorData.message || errorData.error}`)
     }
 
     const result = await response.json()
-    console.log('📧 Email sent successfully via SendGrid:', result)
+    console.log('📧 Email sent successfully via serverless function:', result)
     
-    return {
-      success: true,
-      messageId: result.message_id || 'sendgrid-' + Date.now(),
-      real: true,
-      provider: 'SendGrid'
-    }
+    return result
 
   } catch (error) {
-    console.error('📧 SendGrid error:', error)
+    console.error('📧 Email service error:', error)
     
-    // Fallback to demo mode if SendGrid fails
-    console.log('📧 Falling back to demo mode due to SendGrid error')
+    // Fallback to demo mode if serverless function fails
+    console.log('📧 Falling back to demo mode due to email service error')
     return await sendDemoEmail(emailData)
   }
 }
