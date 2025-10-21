@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import VideoPlayer from '../components/VideoPlayer.vue'
 
 const stats = ref([
   { number: '10K+', label: 'Active Users' },
@@ -70,10 +71,7 @@ onMounted(() => {
         <div class="col-md-6">
           <div class="card border-0 shadow-lg">
             <div class="ratio ratio-16x9 rounded overflow-hidden">
-              <video class="w-100 h-100 object-fit-cover" autoplay muted loop playsinline aria-label="Men's health lifestyle video">
-                <source src="/mens-health.mp4" type="video/mp4" />
-                <p class="text-muted m-0">Your browser does not support the video tag.</p>
-              </video>
+              <VideoPlayer />
             </div>
           </div>
         </div>
