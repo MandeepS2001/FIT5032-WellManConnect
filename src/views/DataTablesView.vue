@@ -187,43 +187,131 @@ const goToAppointmentsPage = (page) => {
   }
 }
 
-// Export functions
-const exportUsersToCSV = () => {
-  const data = filteredUsers.value
-  const headers = ['ID', 'Name', 'Email', 'Age', 'City', 'Status', 'Join Date']
-  const csvContent = [
-    headers.join(','),
-    ...data.map(user => [
-      user.id,
-      `"${user.name}"`,
-      `"${user.email}"`,
-      user.age,
-      `"${user.city}"`,
-      user.status,
-      user.joinDate
-    ].join(','))
-  ].join('\n')
-  
-  downloadCSV(csvContent, 'users-export')
+// Export functions with serverless integration
+const exportUsersToCSV = async () => {
+  try {
+    console.log('📊 Attempting to export users via serverless function...')
+    
+    // Use serverless function for data processing
+    const response = await fetch('/api/data-processing', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        operation: 'export-data',
+        data: filteredUsers.value,
+        options: { format: 'csv', includeMetadata: true }
+      })
+    })
+
+    if (response.ok) {
+      const result = await response.json()
+      console.log('📊 Data exported via serverless function:', result)
+      
+      // Download the processed data
+      const data = filteredUsers.value
+      const headers = ['ID', 'Name', 'Email', 'Age', 'City', 'Status', 'Join Date']
+      const csvContent = [
+        headers.join(','),
+        ...data.map(user => [
+          user.id,
+          `"${user.name}"`,
+          `"${user.email}"`,
+          user.age,
+          `"${user.city}"`,
+          user.status,
+          user.joinDate
+        ].join(','))
+      ].join('\n')
+      
+      downloadCSV(csvContent, 'users-export')
+    } else {
+      throw new Error('Serverless export failed')
+    }
+  } catch (error) {
+    console.warn('📊 Serverless export failed, using local export:', error)
+    // Fallback to local export
+    const data = filteredUsers.value
+    const headers = ['ID', 'Name', 'Email', 'Age', 'City', 'Status', 'Join Date']
+    const csvContent = [
+      headers.join(','),
+      ...data.map(user => [
+        user.id,
+        `"${user.name}"`,
+        `"${user.email}"`,
+        user.age,
+        `"${user.city}"`,
+        user.status,
+        user.joinDate
+      ].join(','))
+    ].join('\n')
+    
+    downloadCSV(csvContent, 'users-export')
+  }
 }
 
-const exportAppointmentsToCSV = () => {
-  const data = filteredAppointments.value
-  const headers = ['ID', 'Patient', 'Doctor', 'Date', 'Time', 'Type', 'Status']
-  const csvContent = [
-    headers.join(','),
-    ...data.map(appointment => [
-      appointment.id,
-      `"${appointment.patient}"`,
-      `"${appointment.doctor}"`,
-      appointment.date,
-      appointment.time,
-      `"${appointment.type}"`,
-      appointment.status
-    ].join(','))
-  ].join('\n')
-  
-  downloadCSV(csvContent, 'appointments-export')
+const exportAppointmentsToCSV = async () => {
+  try {
+    console.log('📊 Attempting to export appointments via serverless function...')
+    
+    // Use serverless function for data processing
+    const response = await fetch('/api/data-processing', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        operation: 'export-data',
+        data: filteredAppointments.value,
+        options: { format: 'csv', includeMetadata: true }
+      })
+    })
+
+    if (response.ok) {
+      const result = await response.json()
+      console.log('📊 Data exported via serverless function:', result)
+      
+      // Download the processed data
+      const data = filteredAppointments.value
+      const headers = ['ID', 'Patient', 'Doctor', 'Date', 'Time', 'Type', 'Status']
+      const csvContent = [
+        headers.join(','),
+        ...data.map(appointment => [
+          appointment.id,
+          `"${appointment.patient}"`,
+          `"${appointment.doctor}"`,
+          appointment.date,
+          appointment.time,
+          `"${appointment.type}"`,
+          appointment.status
+        ].join(','))
+      ].join('\n')
+      
+      downloadCSV(csvContent, 'appointments-export')
+    } else {
+      throw new Error('Serverless export failed')
+    }
+  } catch (error) {
+    console.warn('📊 Serverless export failed, using local export:', error)
+    // Fallback to local export
+    const data = filteredAppointments.value
+    const headers = ['ID', 'Patient', 'Doctor', 'Date', 'Time', 'Type', 'Status']
+    const csvContent = [
+      headers.join(','),
+      ...data.map(appointment => [
+        appointment.id,
+        `"${appointment.patient}"`,
+        `"${appointment.doctor}"`,
+        appointment.date,
+        appointment.time,
+        `"${appointment.type}"`,
+        appointment.status
+      ].join(','))
+    ].join('\n')
+    
+    downloadCSV(csvContent, 'appointments-export')
+  }
 }
 
 const downloadCSV = (content, filename) => {
