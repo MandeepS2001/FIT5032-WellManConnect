@@ -9,23 +9,7 @@
       }
     },
     {
-      "src": "api/send-email.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/user-management.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/data-processing.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/health-analytics.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/mapping-services.js",
+      "src": "api/**/*.js",
       "use": "@vercel/node"
     }
   ],
