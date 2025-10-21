@@ -2,13 +2,6 @@
  * Robust Email Service using SendGrid API
  * This service provides reliable email sending functionality with attachments
  * for the WellMan Connect application.
- * 
- * Features:
- * - SendGrid API integration with fallback to demo mode
- * - Support for email attachments (PDF, DOC, images)
- * - Multiple email templates (welcome, appointment, health report, newsletter)
- * - Professional HTML email formatting
- * - Error handling and retry logic
  */
 
 // SendGrid API Key - Use environment variable or fallback to demo key
@@ -33,7 +26,7 @@ export const isEmailServiceConfigured = () => {
  * @param {string} emailData.from - Sender email (optional)
  * @returns {Promise<Object>} SendGrid response
  */
-export const sendEmailWithAttachment = async (emailData) => {
+export const sendEmailWithSendGrid = async (emailData) => {
   try {
     // Check if SendGrid is configured
     if (!isEmailServiceConfigured()) {
@@ -151,7 +144,7 @@ The WellMan Connect Team`,
     `
   }
 
-  return await sendEmailWithAttachment(emailData)
+  return await sendEmailWithSendGrid(emailData)
 }
 
 /**
@@ -233,7 +226,7 @@ WellMan Connect Healthcare Team`,
     }] : []
   }
 
-  return await sendEmailWithAttachment(emailData)
+  return await sendEmailWithSendGrid(emailData)
 }
 
 /**
@@ -324,7 +317,7 @@ WellMan Connect Healthcare Team`,
     }] : []
   }
 
-  return await sendEmailWithAttachment(emailData)
+  return await sendEmailWithSendGrid(emailData)
 }
 
 /**
@@ -406,7 +399,7 @@ The WellMan Connect Team`,
     `
   }
 
-  return await sendEmailWithAttachment(emailData)
+  return await sendEmailWithSendGrid(emailData)
 }
 
 /**
@@ -476,7 +469,7 @@ startxref
 }
 
 export default {
-  sendEmailWithAttachment,
+  sendEmailWithSendGrid,
   sendWelcomeEmail,
   sendAppointmentConfirmation,
   sendHealthReport,

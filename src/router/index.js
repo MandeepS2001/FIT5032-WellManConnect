@@ -14,6 +14,7 @@ const Profile = () => import('../views/ProfileView.vue')
 const Article = () => import('../views/ArticleView.vue')
 const DataTables = () => import('../views/DataTablesView.vue')
 const Email = () => import('../views/EmailView.vue')
+const EmailComposer = () => import('../views/EmailComposerView.vue')
 
 const router = createRouter({
   history: createWebHistory(),
@@ -28,6 +29,7 @@ const router = createRouter({
     { path: '/login', name: 'login', component: Login },
     { path: '/data-tables', name: 'data-tables', component: DataTables },
     { path: '/email', name: 'email', component: Email },
+    { path: '/email-composer', name: 'email-composer', component: EmailComposer },
     
     // Protected pages (require authentication)
     { 
