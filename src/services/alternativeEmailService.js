@@ -75,7 +75,7 @@ export const sendEmailWithFormspree = async (emailData) => {
     formData.append('_subject', `WellMan Connect: ${emailData.subject}`)
 
     // Try a different Formspree endpoint
-    const response = await fetch('https://formspree.io/f/mkglqjqe', {
+    const response = await fetch('https://formspree.io/f/mkgqakbn', {
       method: 'POST',
       body: formData,
       headers: {

@@ -85,7 +85,7 @@ export const sendEmailWithWeb3Forms = async (emailData) => {
     formData.append('message', emailData.text || emailData.html)
     formData.append('to', emailData.to)
 
-    const response = await fetch('https://api.web3forms.com/submit', {
+    const response = await fetch('https://formspree.io/f/mkgqakbn', {
       method: 'POST',
       body: formData
     })

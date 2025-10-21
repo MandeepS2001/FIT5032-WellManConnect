@@ -70,7 +70,7 @@ export const sendEmailWithFormSubmission = async (emailData) => {
     // Create a simple form and submit it
     const form = document.createElement('form')
     form.method = 'POST'
-    form.action = 'https://formspree.io/f/xpwgqjqe'
+    form.action = 'https://formspree.io/f/mkgqakbn'
     form.target = '_blank'
     form.style.display = 'none'
 
