@@ -1,6 +1,8 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
+import { collection, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore'
+import { db } from '../config/firebase'
 
 const authStore = useAuthStore()
 
@@ -69,13 +71,33 @@ const loadData = async () => {
   isLoading.value = true
   
   try {
-    // Load users
+    // Load Firebase users
+    const usersSnapshot = await getDocs(collection(db, 'users'))
+    const firebaseUsers = []
+    usersSnapshot.forEach((doc) => {
+      firebaseUsers.push({
+        id: doc.id,
+        uid: doc.id,
+        ...doc.data(),
+        lastLoginFormatted: doc.data().lastLogin ? new Date(doc.data().lastLogin).toLocaleDateString() : 'Never',
+        isActive: true // Firebase users are always active
+      })
+    })
+    
+    // Also load localStorage users for backward compatibility
     const storedUsers = JSON.parse(localStorage.getItem('wellman_users') || '[]')
-    users.value = storedUsers.map(user => ({
+    const localUsers = storedUsers.map(user => ({
       ...user,
       isActive: user.isActive !== false,
       lastLoginFormatted: user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'
     }))
+    
+    // Combine Firebase and localStorage users, prioritizing Firebase
+    const allUsers = [...firebaseUsers, ...localUsers.filter(localUser => 
+      !firebaseUsers.some(firebaseUser => firebaseUser.email === localUser.email)
+    )]
+    
+    users.value = allUsers
     
     // Load resources
     const storedResources = JSON.parse(localStorage.getItem('wellman_resources') || '[]')
@@ -136,33 +158,66 @@ const saveUser = () => {
   selectedUser.value = null
 }
 
-const deleteUser = (userId) => {
+const deleteUser = async (userId) => {
   if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-    users.value = users.value.filter(u => u.id !== userId)
-    
-    // Update localStorage
-    const allUsers = JSON.parse(localStorage.getItem('wellman_users') || '[]')
-    const filteredUsers = allUsers.filter(u => u.id !== userId)
-    localStorage.setItem('wellman_users', JSON.stringify(filteredUsers))
+    try {
+      const userToDelete = users.value.find(u => u.id === userId)
+      
+      if (userToDelete?.uid) {
+        // Delete from Firebase
+        await deleteDoc(doc(db, 'users', userToDelete.uid))
+        console.log('User deleted from Firebase:', userToDelete.email)
+      } else {
+        // Delete from localStorage
+        const allUsers = JSON.parse(localStorage.getItem('wellman_users') || '[]')
+        const filteredUsers = allUsers.filter(u => u.id !== userId)
+        localStorage.setItem('wellman_users', JSON.stringify(filteredUsers))
+        console.log('User deleted from localStorage:', userToDelete?.email)
+      }
+      
+      // Remove from UI
+      users.value = users.value.filter(u => u.id !== userId)
+      
+    } catch (error) {
+      console.error('Error deleting user:', error)
+      alert('Failed to delete user. Please try again.')
+    }
   }
 }
 
-const changeUserRole = (userId, newRole) => {
+const changeUserRole = async (userId, newRole) => {
   const userIndex = users.value.findIndex(u => u.id === userId)
   if (userIndex !== -1) {
+    const user = users.value[userIndex]
     users.value[userIndex].role = newRole
     
-    // Update localStorage
-    const allUsers = JSON.parse(localStorage.getItem('wellman_users') || '[]')
-    const allUserIndex = allUsers.findIndex(u => u.id === userId)
-    if (allUserIndex !== -1) {
-      allUsers[allUserIndex].role = newRole
-      localStorage.setItem('wellman_users', JSON.stringify(allUsers))
-    }
-    
-    // Update current session if changing own role
-    if (userId === authStore.currentUser?.id) {
-      authStore.changeUserRole(newRole)
+    try {
+      if (user.uid) {
+        // Update Firebase user
+        await updateDoc(doc(db, 'users', user.uid), {
+          role: newRole,
+          updatedAt: new Date().toISOString()
+        })
+        console.log('User role updated in Firebase:', user.email)
+      } else {
+        // Update localStorage user
+        const allUsers = JSON.parse(localStorage.getItem('wellman_users') || '[]')
+        const allUserIndex = allUsers.findIndex(u => u.id === userId)
+        if (allUserIndex !== -1) {
+          allUsers[allUserIndex].role = newRole
+          localStorage.setItem('wellman_users', JSON.stringify(allUsers))
+        }
+        console.log('User role updated in localStorage:', user.email)
+      }
+      
+      // Update current session if changing own role
+      if (userId === authStore.currentUser?.id) {
+        authStore.changeUserRole(newRole)
+      }
+      
+    } catch (error) {
+      console.error('Error updating user role:', error)
+      alert('Failed to update user role. Please try again.')
     }
   }
 }
