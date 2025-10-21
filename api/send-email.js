@@ -1,6 +1,7 @@
+// Vercel Serverless Function for Email Sending
 const sgMail = require('@sendgrid/mail')
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Credentials', true)
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -17,9 +18,15 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log('Email API called with:', req.body)
+    
     sgMail.setApiKey(process.env.VITE_SENDGRID_API_KEY)
 
     const { to, subject, text, html, attachments, from } = req.body
+
+    if (!to || !subject) {
+      return res.status(400).json({ error: 'Missing required fields: to, subject' })
+    }
 
     const msg = {
       to,
@@ -29,6 +36,8 @@ export default async function handler(req, res) {
       html,
       attachments: attachments || []
     }
+
+    console.log('Sending email:', { to, from: msg.from, subject })
 
     const response = await sgMail.send(msg)
     console.log('Email sent successfully:', response[0].statusCode)
