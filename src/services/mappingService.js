@@ -53,9 +53,17 @@ export class MappingService {
         await this.loadGoogleMapsScript()
       }
 
+      // Wait a bit for the API to be fully initialized
+      await new Promise(resolve => setTimeout(resolve, 100))
+
       // Check if Google Maps loaded successfully
-      if (!window.google || !window.google.maps) {
+      if (!window.google || !window.google.maps || !window.google.maps.Map) {
         throw new Error('Google Maps API failed to load. Please check your API key configuration.')
+      }
+
+      // Additional validation
+      if (typeof window.google.maps.Map !== 'function') {
+        throw new Error('Google Maps Map constructor is not available. API may not be fully loaded.')
       }
 
       const defaultOptions = {
@@ -98,7 +106,7 @@ export class MappingService {
   async loadGoogleMapsScript() {
     return new Promise((resolve, reject) => {
       // Check if already loaded
-      if (window.google && window.google.maps) {
+      if (window.google && window.google.maps && window.google.maps.Map) {
         this.googleMapsLoaded = true
         resolve()
         return
@@ -108,7 +116,7 @@ export class MappingService {
       if (document.querySelector('script[src*="maps.googleapis.com"]')) {
         // Wait for the existing script to load
         const checkLoaded = () => {
-          if (window.google && window.google.maps) {
+          if (window.google && window.google.maps && window.google.maps.Map) {
             this.googleMapsLoaded = true
             resolve()
           } else {
@@ -119,20 +127,24 @@ export class MappingService {
         return
       }
 
-      // Create and load the script
+      // Create a callback function for initialization
+      const callbackName = 'initGoogleMaps_' + Date.now()
+      window[callbackName] = () => {
+        this.googleMapsLoaded = true
+        console.log('🗺️ Google Maps API loaded successfully')
+        delete window[callbackName]
+        resolve()
+      }
+
+      // Create and load the script with callback
       const script = document.createElement('script')
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,geometry&loading=async`
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,geometry&callback=${callbackName}`
       script.async = true
       script.defer = true
       
-      script.onload = () => {
-        this.googleMapsLoaded = true
-        console.log('🗺️ Google Maps API loaded successfully')
-        resolve()
-      }
-      
       script.onerror = (error) => {
         console.error('🗺️ Failed to load Google Maps API:', error)
+        delete window[callbackName]
         reject(new Error('Failed to load Google Maps API. Please check your API key configuration.'))
       }
 
