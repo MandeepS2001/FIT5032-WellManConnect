@@ -564,8 +564,13 @@ onMounted(() => {
 
 .rating-summary {
   padding: 1rem;
-  background-color: var(--light);
+  background-color: #374151;
   border-radius: var(--border-radius);
+  color: #ffffff !important;
+}
+
+.rating-summary * {
+  color: #ffffff !important;
 }
 
 .content-text {
@@ -603,8 +608,7 @@ onMounted(() => {
 .breadcrumb,
 .breadcrumb-item,
 .article-meta,
-.article-author,
-.rating-summary {
+.article-author {
   color: #000000 !important;
 }
 
@@ -625,6 +629,18 @@ onMounted(() => {
 /* Fix rating stars */
 .text-warning, .stars {
   color: #f59e0b !important;
+}
+
+/* Fix rating stars in rating summary bar */
+.rating-summary .text-warning, 
+.rating-summary .stars {
+  color: #fbbf24 !important;
+}
+
+/* Fix rating summary text elements */
+.rating-summary .fw-semibold,
+.rating-summary .text-muted {
+  color: #ffffff !important;
 }
 
 @media (max-width: 768px) {
