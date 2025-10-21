@@ -11,6 +11,8 @@
  * - Error handling and retry logic
  */
 
+import { sendEmailWithFallback, loadEmailJS } from './alternativeEmailService.js'
+
 // SendGrid API Key - Use environment variable only
 const SENDGRID_API_KEY = import.meta.env.VITE_SENDGRID_API_KEY
 
@@ -83,9 +85,15 @@ export const sendEmailWithAttachment = async (emailData) => {
   } catch (error) {
     console.error('📧 Email service error:', error)
     
-    // Fallback to demo mode if serverless function fails
-    console.log('📧 Falling back to demo mode due to email service error')
-    return await sendDemoEmail(emailData)
+    // Try alternative email services before falling back to demo mode
+    try {
+      console.log('📧 Trying alternative email services...')
+      return await sendEmailWithFallback(emailData)
+    } catch (fallbackError) {
+      console.error('📧 All email services failed:', fallbackError)
+      console.log('📧 Falling back to demo mode due to email service error')
+      return await sendDemoEmail(emailData)
+    }
   }
 }
 
