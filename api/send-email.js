@@ -2,6 +2,12 @@
 // This function runs server-side and can access SendGrid API without CORS issues
 
 export default async function handler(req, res) {
+  console.log('📧 Email API handler called:', {
+    method: req.method,
+    url: req.url,
+    headers: req.headers
+  })
+
   // Enable CORS for all origins
   res.setHeader('Access-Control-Allow-Credentials', true)
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -9,12 +15,14 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization')
 
   if (req.method === 'OPTIONS') {
+    console.log('📧 Handling OPTIONS request')
     res.status(200).end()
     return
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
+    console.log('📧 Method not allowed:', req.method)
+    return res.status(405).json({ error: 'Method not allowed', received: req.method })
   }
 
   try {

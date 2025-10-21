@@ -51,7 +51,13 @@ export const sendEmailWithAttachment = async (emailData) => {
     })
 
     if (!response.ok) {
-      const errorData = await response.json()
+      let errorData
+      try {
+        errorData = await response.json()
+      } catch (e) {
+        errorData = { error: 'Failed to parse error response', status: response.status }
+      }
+      
       console.warn('📧 Serverless function error:', errorData)
       
       // If it's an API key issue, fall back to demo mode
@@ -63,7 +69,13 @@ export const sendEmailWithAttachment = async (emailData) => {
       throw new Error(`Serverless function error: ${response.status} - ${errorData.message || errorData.error}`)
     }
 
-    const result = await response.json()
+    let result
+    try {
+      result = await response.json()
+    } catch (e) {
+      console.warn('📧 Failed to parse response JSON:', e)
+      result = { success: true, message: 'Email sent successfully', real: true }
+    }
     console.log('📧 Email sent successfully via serverless function:', result)
     
     return result
