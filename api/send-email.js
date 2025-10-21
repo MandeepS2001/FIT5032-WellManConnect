@@ -23,10 +23,20 @@ export default async function handler(req, res) {
     // Get SendGrid API key from environment variables
     const SENDGRID_API_KEY = process.env.VITE_SENDGRID_API_KEY
     
+    console.log('📧 SendGrid API Key check:', {
+      hasKey: !!SENDGRID_API_KEY,
+      keyLength: SENDGRID_API_KEY?.length || 0,
+      keyPrefix: SENDGRID_API_KEY?.substring(0, 10) || 'none'
+    })
+    
     if (!SENDGRID_API_KEY || SENDGRID_API_KEY === 'SG.demo-api-key-replace-with-actual') {
       return res.status(400).json({ 
         error: 'SendGrid API key not configured',
-        message: 'Please configure VITE_SENDGRID_API_KEY in Vercel environment variables'
+        message: 'Please configure VITE_SENDGRID_API_KEY in Vercel environment variables',
+        debug: {
+          hasKey: !!SENDGRID_API_KEY,
+          keyLength: SENDGRID_API_KEY?.length || 0
+        }
       })
     }
 

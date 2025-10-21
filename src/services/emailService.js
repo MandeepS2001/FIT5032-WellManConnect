@@ -35,19 +35,13 @@ export const isEmailServiceConfigured = () => {
  */
 export const sendEmailWithAttachment = async (emailData) => {
   try {
-    // Check if SendGrid is configured
-    if (!isEmailServiceConfigured()) {
-      console.warn('📧 SendGrid not configured, using demo mode')
-      return await sendDemoEmail(emailData)
-    }
-
-    console.log('📧 Sending email via serverless function:', {
+    console.log('📧 Attempting to send email via serverless function:', {
       to: emailData.to,
       subject: emailData.subject,
       attachments: emailData.attachments?.length || 0
     })
 
-    // Send email using our serverless function (bypasses CORS)
+    // Always try the serverless function first (it will handle API key check)
     const response = await fetch('/api/send-email', {
       method: 'POST',
       headers: {
@@ -58,6 +52,14 @@ export const sendEmailWithAttachment = async (emailData) => {
 
     if (!response.ok) {
       const errorData = await response.json()
+      console.warn('📧 Serverless function error:', errorData)
+      
+      // If it's an API key issue, fall back to demo mode
+      if (errorData.error === 'SendGrid API key not configured') {
+        console.log('📧 SendGrid not configured, falling back to demo mode')
+        return await sendDemoEmail(emailData)
+      }
+      
       throw new Error(`Serverless function error: ${response.status} - ${errorData.message || errorData.error}`)
     }
 
