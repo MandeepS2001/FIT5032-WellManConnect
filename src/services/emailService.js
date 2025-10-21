@@ -3,13 +3,8 @@
  * Handles email sending with attachments for WellMan Connect
  */
 
-import sgMail from '@sendgrid/mail'
-
 // SendGrid API Key - Use environment variable or fallback to demo key
 const SENDGRID_API_KEY = import.meta.env.VITE_SENDGRID_API_KEY || 'SG.demo-api-key-replace-with-actual'
-
-// Configure SendGrid
-sgMail.setApiKey(SENDGRID_API_KEY)
 
 /**
  * Send email with attachment using SendGrid
@@ -30,21 +25,32 @@ export const sendEmailWithAttachment = async (emailData) => {
   }
 
   try {
-    const msg = {
-      to: emailData.to,
-      from: emailData.from || 'mdan0028@student.monash.edu',
-      subject: emailData.subject,
-      text: emailData.text,
-      html: emailData.html,
-      attachments: emailData.attachments || []
+    // Use server-side API route to avoid CORS issues
+    const response = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        to: emailData.to,
+        from: emailData.from || 'mdan0028@student.monash.edu',
+        subject: emailData.subject,
+        text: emailData.text,
+        html: emailData.html,
+        attachments: emailData.attachments || []
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
     }
 
-    const response = await sgMail.send(msg)
-    console.log('Email sent successfully:', response[0].statusCode)
-    return { success: true, messageId: response[0].headers['x-message-id'] }
+    const result = await response.json()
+    console.log('Email sent successfully via API')
+    return { success: true, messageId: result.messageId }
   } catch (error) {
-    console.error('SendGrid email error:', error)
-    console.log('Falling back to demo mode due to SendGrid error')
+    console.error('Email API error:', error)
+    console.log('Falling back to demo mode due to API error')
     return await sendDemoEmail(emailData)
   }
 }
