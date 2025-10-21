@@ -27,9 +27,6 @@ const router = createRouter({
     { path: '/appointments', name: 'appointments', component: Appointments },
     { path: '/signup', name: 'signup', component: SignUp },
     { path: '/login', name: 'login', component: Login },
-    { path: '/data-tables', name: 'data-tables', component: DataTables },
-    { path: '/email', name: 'email', component: Email },
-    { path: '/email-composer', name: 'email-composer', component: EmailComposer },
     
     // Protected pages (require authentication)
     { 
@@ -50,6 +47,24 @@ const router = createRouter({
       path: '/admin', 
       name: 'admin', 
       component: Admin,
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    { 
+      path: '/data-tables', 
+      name: 'data-tables', 
+      component: DataTables,
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    { 
+      path: '/email', 
+      name: 'email', 
+      component: Email,
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    { 
+      path: '/email-composer', 
+      name: 'email-composer', 
+      component: EmailComposer,
       meta: { requiresAuth: true, requiresAdmin: true }
     },
     

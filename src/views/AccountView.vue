@@ -165,13 +165,13 @@
           </div>
         </div>
 
-        <!-- Quick Links -->
-        <div class="row mt-4">
+        <!-- Admin Quick Links (Admin Only) -->
+        <div v-if="isAdmin" class="row mt-4">
           <div class="col-12">
             <div class="card border-0 shadow-sm">
               <div class="card-header bg-light">
                 <h5 class="mb-0">
-                  <i class="bi bi-link-45deg me-2"></i>Quick Links
+                  <i class="bi bi-shield-check me-2"></i>Admin Tools
                 </h5>
               </div>
               <div class="card-body">
@@ -189,6 +189,33 @@
                   <div class="col-md-4 mb-2">
                     <RouterLink to="/email-composer" class="btn btn-outline-success w-100">
                       <i class="bi bi-pencil-square me-2"></i>Email Composer
+                    </RouterLink>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Regular User Quick Links -->
+        <div v-if="!isAdmin" class="row mt-4">
+          <div class="col-12">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header bg-light">
+                <h5 class="mb-0">
+                  <i class="bi bi-link-45deg me-2"></i>Quick Links
+                </h5>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-6 mb-2">
+                    <RouterLink to="/resources" class="btn btn-outline-info w-100">
+                      <i class="bi bi-book me-2"></i>Health Resources
+                    </RouterLink>
+                  </div>
+                  <div class="col-md-6 mb-2">
+                    <RouterLink to="/tools" class="btn btn-outline-warning w-100">
+                      <i class="bi bi-tools me-2"></i>Health Tools
                     </RouterLink>
                   </div>
                 </div>

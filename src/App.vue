@@ -65,7 +65,6 @@ onMounted(() => {
     <div class="container">
       <div class="navbar-brand">
         <span class="text-primary">WellMan</span> Connect
-        <span class="badge bg-primary ms-2" aria-label="Beta version">Beta</span>
       </div>
       <button
         class="navbar-toggler"
@@ -92,13 +91,14 @@ onMounted(() => {
           <li class="nav-item">
             <RouterLink class="nav-link" to="/appointments">Book an Appointment</RouterLink>
           </li>
-          <li class="nav-item">
+          <!-- Admin-only navigation items -->
+          <li v-if="isAdmin" class="nav-item">
             <RouterLink class="nav-link" to="/data-tables">Data Tables</RouterLink>
           </li>
-          <li class="nav-item">
+          <li v-if="isAdmin" class="nav-item">
             <RouterLink class="nav-link" to="/email">Email Service</RouterLink>
           </li>
-          <li class="nav-item">
+          <li v-if="isAdmin" class="nav-item">
             <RouterLink class="nav-link" to="/email-composer">Email Composer</RouterLink>
           </li>
           
@@ -114,7 +114,7 @@ onMounted(() => {
         </ul>
         
         <!-- Authentication buttons -->
-        <div class="d-flex gap-2 align-items-center">
+        <div class="d-flex gap-3 align-items-center">
           <!-- User info when authenticated -->
           <div v-if="isAuthenticated" class="d-flex align-items-center gap-2 me-3">
             <div class="text-end d-none d-md-block">
@@ -154,10 +154,10 @@ onMounted(() => {
           
           <!-- Login/Signup when not authenticated -->
           <template v-else>
-            <RouterLink to="/login" class="btn btn-outline-primary">
+            <RouterLink to="/login" class="btn btn-outline-primary px-4">
               Sign In
             </RouterLink>
-            <RouterLink to="/signup" class="btn btn-primary">
+            <RouterLink to="/signup" class="btn btn-primary px-4">
               Sign Up
             </RouterLink>
           </template>
@@ -203,6 +203,69 @@ onMounted(() => {
 </template>
 
 <style scoped>
+/* Force light theme for navbar and footer to ensure readability */
+.navbar {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+}
+
+.navbar-brand {
+  color: #111827 !important;
+  font-weight: 700;
+}
+
+.navbar-nav .nav-link {
+  color: #4b5563 !important;
+  font-weight: 500;
+}
+
+.navbar-nav .nav-link:hover {
+  color: #2563eb !important;
+  background-color: #dbeafe !important;
+}
+
+.navbar-nav .nav-link.router-link-active {
+  color: #2563eb !important;
+  background-color: #dbeafe !important;
+  font-weight: 600;
+}
+
+/* Footer styling */
+footer {
+  background: #f9fafb !important;
+  border-top: 1px solid #e5e7eb !important;
+  color: #374151 !important;
+}
+
+footer a {
+  color: #6b7280 !important;
+}
+
+footer a:hover {
+  color: #2563eb !important;
+}
+
+footer strong {
+  color: #111827 !important;
+}
+
+/* Button styling improvements */
+.btn {
+  font-weight: 500;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.btn-outline-primary {
+  border-width: 1.5px;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.15);
+}
+
 .loading-overlay {
   position: fixed;
   top: 0;
