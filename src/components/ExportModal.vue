@@ -140,7 +140,7 @@
                       <label class="btn btn-outline-primary w-100 h-100 d-flex flex-column justify-content-center" for="formatPDF">
                         <i class="bi bi-file-earmark-pdf fs-2 mb-2" aria-hidden="true"></i>
                         <strong>PDF</strong>
-                        <small class="text-muted">Portable Document Format</small>
+                        <small class="text-muted">Print-friendly format</small>
                       </label>
                     </div>
                   </div>
@@ -264,6 +264,23 @@
                 <li><strong>Estimated Size:</strong> {{ estimatedFileSize }}</li>
                 <li><strong>Export Time:</strong> {{ estimatedExportTime }}</li>
               </ul>
+              
+              <!-- PDF Export Instructions -->
+              <div v-if="selectedFormat === 'pdf'" class="mt-3 p-3 bg-light rounded">
+                <h6 class="text-primary mb-2">
+                  <i class="bi bi-printer me-2" aria-hidden="true"></i>
+                  PDF Export Instructions
+                </h6>
+                <p class="mb-2 small">
+                  PDF export will open a new window with a print-ready document. To save as PDF:
+                </p>
+                <ol class="mb-0 small">
+                  <li>Click the "Print to PDF" button in the new window</li>
+                  <li>In the print dialog, select "Save as PDF" as the destination</li>
+                  <li>Choose your save location and filename</li>
+                  <li>Click "Save" to download your PDF file</li>
+                </ol>
+              </div>
             </div>
           </div>
         </div>

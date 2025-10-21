@@ -197,24 +197,40 @@ const showExportModal = () => {
 
 const handleExportComplete = (result) => {
   console.log('✅ Export completed successfully:', result)
-  // Show success message
+  
+  // Show success message with format-specific instructions
   const alert = document.createElement('div')
   alert.className = 'alert alert-success alert-dismissible fade show position-fixed'
-  alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;'
-  alert.innerHTML = `
+  alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 350px;'
+  
+  let message = `
     <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>
     <strong>Export Successful!</strong><br>
     ${result.recordCount} records exported as ${result.format.toUpperCase()}
+  `
+  
+  // Add PDF-specific instructions
+  if (result.format.toLowerCase() === 'pdf' && result.openedInWindow) {
+    message += `
+      <br><small class="text-muted">
+        <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+        PDF opened in new window. Use browser's "Print to PDF" to save.
+      </small>
+    `
+  }
+  
+  alert.innerHTML = message + `
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
   `
   document.body.appendChild(alert)
   
-  // Auto-remove after 5 seconds
+  // Auto-remove after 8 seconds (longer for PDF instructions)
+  const removeTime = result.format.toLowerCase() === 'pdf' ? 8000 : 5000
   setTimeout(() => {
     if (alert.parentNode) {
       alert.parentNode.removeChild(alert)
     }
-  }, 5000)
+  }, removeTime)
 }
 
 const handleExportError = (error) => {
