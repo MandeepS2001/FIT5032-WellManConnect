@@ -159,29 +159,45 @@ const saveUser = () => {
 }
 
 const deleteUser = async (userId) => {
-  if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-    try {
-      const userToDelete = users.value.find(u => u.id === userId)
-      
-      if (userToDelete?.uid) {
-        // Delete from Firebase
-        await deleteDoc(doc(db, 'users', userToDelete.uid))
-        console.log('User deleted from Firebase:', userToDelete.email)
-      } else {
-        // Delete from localStorage
-        const allUsers = JSON.parse(localStorage.getItem('wellman_users') || '[]')
-        const filteredUsers = allUsers.filter(u => u.id !== userId)
-        localStorage.setItem('wellman_users', JSON.stringify(filteredUsers))
-        console.log('User deleted from localStorage:', userToDelete?.email)
-      }
-      
-      // Remove from UI
-      users.value = users.value.filter(u => u.id !== userId)
-      
-    } catch (error) {
-      console.error('Error deleting user:', error)
-      alert('Failed to delete user. Please try again.')
+  const userToDelete = users.value.find(u => u.id === userId)
+  
+  if (userToDelete?.uid) {
+    // For Firebase users, show warning about authentication
+    const confirmed = confirm(
+      `Are you sure you want to delete ${userToDelete.email}?\n\n` +
+      `WARNING: This will remove the user from the database, but they may still be able to log in.\n` +
+      `To completely remove them, you'll need to delete them from Firebase Authentication manually.\n\n` +
+      `This action cannot be undone.`
+    )
+    
+    if (!confirmed) return
+  } else {
+    // For localStorage users, normal confirmation
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+      return
     }
+  }
+  
+  try {
+    if (userToDelete?.uid) {
+      // Delete from Firebase Firestore only
+      await deleteDoc(doc(db, 'users', userToDelete.uid))
+      console.log('User deleted from Firebase Firestore:', userToDelete.email)
+      alert(`User ${userToDelete.email} deleted from database.\n\nNote: They may still exist in Firebase Authentication.`)
+    } else {
+      // Delete from localStorage
+      const allUsers = JSON.parse(localStorage.getItem('wellman_users') || '[]')
+      const filteredUsers = allUsers.filter(u => u.id !== userId)
+      localStorage.setItem('wellman_users', JSON.stringify(filteredUsers))
+      console.log('User deleted from localStorage:', userToDelete?.email)
+    }
+    
+    // Remove from UI
+    users.value = users.value.filter(u => u.id !== userId)
+    
+  } catch (error) {
+    console.error('Error deleting user:', error)
+    alert('Failed to delete user. Please try again.')
   }
 }
 
