@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { generateMockData, columnConfigs } from '../utils/dataTables'
+import { exportService, exportFormats, exportUtils } from '../utils/exportService'
+import ExportModal from '../components/ExportModal.vue'
 
 // Reactive data
 const activeTab = ref('users')
@@ -187,68 +189,87 @@ const goToAppointmentsPage = (page) => {
   }
 }
 
-// Export functions with serverless integration
-const exportUsersToCSV = async () => {
-  try {
-    console.log('📊 Attempting to export users via serverless function...')
-    
-    // Use serverless function for data processing
-    const response = await fetch('/api/data-processing', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        operation: 'export-data',
-        data: filteredUsers.value,
-        options: { format: 'csv', includeMetadata: true }
-      })
-    })
+// Enhanced export functions with multiple format support
+const showExportModal = () => {
+  const modal = new bootstrap.Modal(document.getElementById('exportModal'))
+  modal.show()
+}
 
-    if (response.ok) {
-      const result = await response.json()
-      console.log('📊 Data exported via serverless function:', result)
-      
-      // Download the processed data
-      const data = filteredUsers.value
-      const headers = ['ID', 'Name', 'Email', 'Age', 'City', 'Status', 'Join Date']
-      const csvContent = [
-        headers.join(','),
-        ...data.map(user => [
-          user.id,
-          `"${user.name}"`,
-          `"${user.email}"`,
-          user.age,
-          `"${user.city}"`,
-          user.status,
-          user.joinDate
-        ].join(','))
-      ].join('\n')
-      
-      downloadCSV(csvContent, 'users-export')
-    } else {
-      throw new Error('Serverless export failed')
+const handleExportComplete = (result) => {
+  console.log('✅ Export completed successfully:', result)
+  // Show success message
+  const alert = document.createElement('div')
+  alert.className = 'alert alert-success alert-dismissible fade show position-fixed'
+  alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;'
+  alert.innerHTML = `
+    <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>
+    <strong>Export Successful!</strong><br>
+    ${result.recordCount} records exported as ${result.format.toUpperCase()}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  `
+  document.body.appendChild(alert)
+  
+  // Auto-remove after 5 seconds
+  setTimeout(() => {
+    if (alert.parentNode) {
+      alert.parentNode.removeChild(alert)
     }
+  }, 5000)
+}
+
+const handleExportError = (error) => {
+  console.error('❌ Export failed:', error)
+  // Show error message
+  const alert = document.createElement('div')
+  alert.className = 'alert alert-danger alert-dismissible fade show position-fixed'
+  alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;'
+  alert.innerHTML = `
+    <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
+    <strong>Export Failed!</strong><br>
+    ${error.message || 'An error occurred during export'}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  `
+  document.body.appendChild(alert)
+  
+  // Auto-remove after 8 seconds
+  setTimeout(() => {
+    if (alert.parentNode) {
+      alert.parentNode.removeChild(alert)
+    }
+  }, 8000)
+}
+
+// Quick export functions for individual formats
+const quickExportCSV = async (data, filename) => {
+  try {
+    await exportUtils.quickCSVExport(data, filename)
+    handleExportComplete({ recordCount: data.length, format: 'csv' })
   } catch (error) {
-    console.warn('📊 Serverless export failed, using local export:', error)
-    // Fallback to local export
-    const data = filteredUsers.value
-    const headers = ['ID', 'Name', 'Email', 'Age', 'City', 'Status', 'Join Date']
-    const csvContent = [
-      headers.join(','),
-      ...data.map(user => [
-        user.id,
-        `"${user.name}"`,
-        `"${user.email}"`,
-        user.age,
-        `"${user.city}"`,
-        user.status,
-        user.joinDate
-      ].join(','))
-    ].join('\n')
-    
-    downloadCSV(csvContent, 'users-export')
+    handleExportError(error)
   }
+}
+
+const quickExportPDF = async (data, filename) => {
+  try {
+    await exportUtils.quickPDFExport(data, filename)
+    handleExportComplete({ recordCount: data.length, format: 'pdf' })
+  } catch (error) {
+    handleExportError(error)
+  }
+}
+
+const quickExportJSON = async (data, filename) => {
+  try {
+    await exportUtils.quickJSONExport(data, filename)
+    handleExportComplete({ recordCount: data.length, format: 'json' })
+  } catch (error) {
+    handleExportError(error)
+  }
+}
+
+// Legacy export functions (kept for backward compatibility)
+const exportUsersToCSV = async () => {
+  await quickExportCSV(filteredUsers.value, 'users-export')
 }
 
 const exportAppointmentsToCSV = async () => {
@@ -415,11 +436,45 @@ const downloadCSV = (content, filename) => {
             <div class="d-flex justify-content-between align-items-center">
               <h4>Users Management</h4>
               <div class="d-flex gap-2">
-                <button class="btn btn-outline-primary btn-sm" @click="exportUsersToCSV">
-                  <i class="bi bi-download me-1"></i>Export CSV
+                <button 
+                  class="btn btn-primary btn-sm" 
+                  @click="showExportModal"
+                  aria-label="Open export options for users data"
+                >
+                  <i class="bi bi-download me-1" aria-hidden="true"></i>Export Data
                 </button>
-                <button class="btn btn-outline-secondary btn-sm" @click="refreshTable('users')">
-                  <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                <div class="btn-group" role="group" aria-label="Quick export options">
+                  <button 
+                    class="btn btn-outline-success btn-sm" 
+                    @click="quickExportCSV(filteredUsers, 'users-csv')"
+                    title="Quick CSV Export"
+                    aria-label="Quick CSV export of users data"
+                  >
+                    <i class="bi bi-filetype-csv" aria-hidden="true"></i>
+                  </button>
+                  <button 
+                    class="btn btn-outline-danger btn-sm" 
+                    @click="quickExportPDF(filteredUsers, 'users-pdf')"
+                    title="Quick PDF Export"
+                    aria-label="Quick PDF export of users data"
+                  >
+                    <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>
+                  </button>
+                  <button 
+                    class="btn btn-outline-info btn-sm" 
+                    @click="quickExportJSON(filteredUsers, 'users-json')"
+                    title="Quick JSON Export"
+                    aria-label="Quick JSON export of users data"
+                  >
+                    <i class="bi bi-file-earmark-code" aria-hidden="true"></i>
+                  </button>
+                </div>
+                <button 
+                  class="btn btn-outline-secondary btn-sm" 
+                  @click="refreshTable('users')"
+                  aria-label="Refresh users table data"
+                >
+                  <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>Refresh
                 </button>
               </div>
             </div>
@@ -628,6 +683,14 @@ const downloadCSV = (content, filename) => {
       </div>
     </div>
   </div>
+
+  <!-- Export Modal Component -->
+  <ExportModal 
+    :users-data="usersData"
+    :appointments-data="appointmentsData"
+    @export-complete="handleExportComplete"
+    @export-error="handleExportError"
+  />
 </template>
 
 <style scoped>
