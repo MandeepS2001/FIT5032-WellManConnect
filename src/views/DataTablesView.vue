@@ -1,29 +1,59 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { createInteractiveTable, addCustomSearch, exportTableToCSV } from '../utils/dataTables'
+import { createInteractiveTable, addCustomSearch, exportTableToCSV, generateMockData, columnConfigs } from '../utils/dataTables'
 
 // Reactive data
 const usersTable = ref(null)
 const appointmentsTable = ref(null)
 const activeTab = ref('users')
+const isLoading = ref(true)
+const error = ref(null)
 
 // Initialize tables when component mounts
 onMounted(() => {
-  try {
-    // Initialize users table
-    usersTable.value = createInteractiveTable('users-table-container', 'Users Management', 'users')
-    addCustomSearch('users-table', 'users-search-container')
-    
-    // Initialize appointments table
-    appointmentsTable.value = createInteractiveTable('appointments-table-container', 'Appointments Management', 'appointments')
-    addCustomSearch('appointments-table', 'appointments-search-container')
-    
-    // Make export function globally available
-    window.exportTableToCSV = exportTableToCSV
-    
-  } catch (error) {
-    console.error('Error initializing tables:', error)
+  // Wait for jQuery and DataTables to be available
+  const initializeTables = () => {
+    if (typeof window.$ === 'undefined' || typeof window.$.fn.DataTable === 'undefined') {
+      console.log('jQuery or DataTables not ready, retrying...')
+      setTimeout(initializeTables, 100)
+      return
+    }
+
+    try {
+      console.log('Initializing DataTables...')
+      
+      // Initialize users table
+      usersTable.value = createInteractiveTable('users-table-container', 'Users Management', 'users')
+      addCustomSearch('users-table', 'users-search-container')
+      
+      // Initialize appointments table
+      appointmentsTable.value = createInteractiveTable('appointments-table-container', 'Appointments Management', 'appointments')
+      addCustomSearch('appointments-table', 'appointments-search-container')
+      
+      // Make export function globally available
+      window.exportTableToCSV = exportTableToCSV
+      
+      console.log('DataTables initialized successfully')
+      isLoading.value = false
+      
+    } catch (err) {
+      console.error('Error initializing tables:', err)
+      console.log('Falling back to basic table implementation...')
+      
+      // Fallback to basic table implementation
+      try {
+        createBasicTable('users-table-container', 'Users Management', 'users')
+        createBasicTable('appointments-table-container', 'Appointments Management', 'appointments')
+        isLoading.value = false
+      } catch (fallbackErr) {
+        error.value = err.message
+        isLoading.value = false
+      }
+    }
   }
+
+  // Start initialization
+  initializeTables()
 })
 
 // Cleanup when component unmounts
@@ -52,6 +82,54 @@ const refreshTable = (tableType) => {
   } catch (error) {
     console.error('Error refreshing table:', error)
   }
+}
+
+// Fallback basic table creation
+const createBasicTable = (containerId, title, tableType) => {
+  const data = generateMockData[tableType]
+  const columns = columnConfigs[tableType]
+  
+  if (!data || !columns) {
+    throw new Error(`Invalid table type: ${tableType}`)
+  }
+
+  const tableHtml = `
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">${title}</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead class="table-dark">
+              <tr>
+                ${columns.map(col => `<th>${col.title}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${data.map(row => `
+                <tr>
+                  ${columns.map(col => {
+                    if (col.render) {
+                      return `<td>${col.render(row[col.data], 'display', row)}</td>`
+                    }
+                    return `<td>${row[col.data]}</td>`
+                  }).join('')}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div class="mt-3">
+          <small class="text-muted">
+            Showing ${data.length} entries (Basic table - DataTables not available)
+          </small>
+        </div>
+      </div>
+    </div>
+  `
+
+  document.getElementById(containerId).innerHTML = tableHtml
 }
 </script>
 
@@ -122,8 +200,25 @@ const refreshTable = (tableType) => {
           </div>
         </div>
 
+        <!-- Loading State -->
+        <div v-if="isLoading" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-3 text-muted">Loading data tables...</p>
+        </div>
+
+        <!-- Error State -->
+        <div v-else-if="error" class="alert alert-danger" role="alert">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          Error loading data tables: {{ error }}
+          <button class="btn btn-outline-danger btn-sm ms-2" @click="location.reload()">
+            <i class="bi bi-arrow-clockwise me-1"></i>Retry
+          </button>
+        </div>
+
         <!-- Users Table Tab -->
-        <div v-if="activeTab === 'users'" class="tab-content">
+        <div v-else-if="activeTab === 'users'" class="tab-content">
           <div class="mb-3">
             <div class="d-flex justify-content-between align-items-center">
               <h4>Users Management</h4>
@@ -141,7 +236,7 @@ const refreshTable = (tableType) => {
         </div>
 
         <!-- Appointments Table Tab -->
-        <div v-if="activeTab === 'appointments'" class="tab-content">
+        <div v-else-if="activeTab === 'appointments'" class="tab-content">
           <div class="mb-3">
             <div class="d-flex justify-content-between align-items-center">
               <h4>Appointments Management</h4>
