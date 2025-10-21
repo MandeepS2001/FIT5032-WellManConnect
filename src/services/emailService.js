@@ -12,7 +12,7 @@
  */
 
 // SendGrid API Key - Use environment variable or fallback to demo key
-const SENDGRID_API_KEY = import.meta.env.VITE_SENDGRID_API_KEY || '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'
+const SENDGRID_API_KEY = import.meta.env.VITE_SENDGRID_API_KEY || 'demo-api-key-not-configured'
 
 /**
  * Check if email service is configured with a real API key
