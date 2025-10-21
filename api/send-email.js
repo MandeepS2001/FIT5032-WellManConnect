@@ -30,7 +30,7 @@ module.exports = async (req, res) => {
 
     const msg = {
       to,
-      from: from || 'mdan0028@student.monash.edu',
+      from: from || 'md@mandeepdang.com', // Use your new sender email
       subject,
       text,
       html,

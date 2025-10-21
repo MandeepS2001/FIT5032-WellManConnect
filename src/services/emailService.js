@@ -18,13 +18,41 @@ const SENDGRID_API_KEY = import.meta.env.VITE_SENDGRID_API_KEY || 'SG.demo-api-k
  * @returns {Promise<Object>} SendGrid response
  */
 export const sendEmailWithAttachment = async (emailData) => {
-  // For production deployment, use demo mode since API routes are having issues
-  // This demonstrates the email functionality works correctly
-  console.log('📧 Email Service: Using demo mode for reliable email functionality')
-  console.log('📧 This demonstrates that the email service is properly integrated')
-  console.log('📧 In a production environment, this would send real emails via SendGrid')
-  
-  return await sendDemoEmail(emailData)
+  // Check if SendGrid is properly configured
+  if (!isEmailServiceConfigured()) {
+    console.log('SendGrid not configured, using demo mode')
+    return await sendDemoEmail(emailData)
+  }
+
+  try {
+    // Use server-side API route to send real emails
+    const response = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        to: emailData.to,
+        from: emailData.from || 'md@mandeepdang.com', // Use your new sender email
+        subject: emailData.subject,
+        text: emailData.text,
+        html: emailData.html,
+        attachments: emailData.attachments || []
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const result = await response.json()
+    console.log('📧 Real email sent successfully via API:', result)
+    return { success: true, messageId: result.messageId }
+  } catch (error) {
+    console.error('Email API error:', error)
+    console.log('📧 Falling back to demo mode due to API error')
+    return await sendDemoEmail(emailData)
+  }
 }
 
 /**
