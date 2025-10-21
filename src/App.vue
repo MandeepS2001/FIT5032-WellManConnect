@@ -1,12 +1,14 @@
 <script setup>
-import { ref, onMounted, computed, nextTick } from 'vue'
+import { ref, onMounted, computed, nextTick, watch } from 'vue'
 import { useAuthStore } from './stores/auth'
 import { useRoute } from 'vue-router'
+import { focusManagement, ariaUtils, keyboardNavigation, motionAccessibility } from './utils/accessibility'
 
 const authStore = useAuthStore()
 const route = useRoute()
 
 const isLoading = ref(true)
+const mainContentRef = ref(null)
 
 // Computed properties for dynamic navigation
 const isAuthenticated = computed(() => authStore.isAuthenticated)
@@ -70,6 +72,40 @@ const collapseMobileMenu = async () => {
   }, 150)
 }
 
+// Accessibility functions
+const handleSkipToContent = (event) => {
+  event.preventDefault()
+  if (mainContentRef.value) {
+    focusManagement.setFocus(mainContentRef.value)
+    ariaUtils.announce('Skipped to main content', 'polite')
+  }
+}
+
+const handleKeyDown = (event) => {
+  keyboardNavigation.handleEscapeKey(event, () => {
+    // Handle escape key for closing modals, dropdowns, etc.
+    const activeModal = document.querySelector('.modal.show')
+    if (activeModal) {
+      const closeButton = activeModal.querySelector('[data-bs-dismiss="modal"]')
+      if (closeButton) closeButton.click()
+    }
+    
+    const activeDropdown = document.querySelector('.dropdown-menu.show')
+    if (activeDropdown) {
+      const dropdownToggle = document.querySelector('[data-bs-toggle="dropdown"][aria-expanded="true"]')
+      if (dropdownToggle) dropdownToggle.click()
+    }
+  })
+}
+
+// Watch for route changes to announce page changes to screen readers
+watch(route, (newRoute) => {
+  nextTick(() => {
+    const pageTitle = document.title
+    ariaUtils.announce(`Navigated to ${pageTitle}`, 'polite')
+  })
+})
+
 onMounted(() => {
   // Initialize authentication
   authStore.initializeAuth()
@@ -77,9 +113,18 @@ onMounted(() => {
   // Start session refresh
   authStore.startSessionRefresh()
   
+  // Add global keyboard event listener
+  document.addEventListener('keydown', handleKeyDown)
+  
+  // Apply reduced motion preferences
+  if (motionAccessibility.prefersReducedMotion()) {
+    document.body.classList.add('reduced-motion')
+  }
+  
   // Simulate loading time for better UX
   setTimeout(() => {
     isLoading.value = false
+    ariaUtils.announce('Page loaded successfully', 'polite')
   }, 500)
 })
 </script>
@@ -95,13 +140,25 @@ onMounted(() => {
   -->
   
   <!-- Skip to content link for screen readers -->
-  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <a 
+    href="#main-content" 
+    class="skip-link"
+    @click="handleSkipToContent"
+    aria-label="Skip to main content"
+  >
+    Skip to main content
+  </a>
   
   <!-- Error Alert -->
-  <div v-if="errorMessage" class="alert alert-danger alert-dismissible fade show m-0" role="alert">
-    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+  <div v-if="errorMessage" class="alert alert-danger alert-dismissible fade show m-0" role="alert" aria-live="assertive">
+    <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
     {{ errorMessage }}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <button 
+      type="button" 
+      class="btn-close" 
+      data-bs-dismiss="alert"
+      aria-label="Close error message"
+    ></button>
   </div>
 
   <nav class="navbar navbar-expand-lg sticky-top" role="navigation" aria-label="Main navigation">
@@ -116,91 +173,211 @@ onMounted(() => {
         data-bs-target="#navbarNav"
         aria-controls="navbarNav"
         aria-expanded="false"
-        aria-label="Toggle navigation"
+        aria-label="Toggle main navigation menu"
+        aria-describedby="navbar-description"
       >
-        <span class="navbar-toggler-icon"></span>
+        <span class="navbar-toggler-icon" aria-hidden="true"></span>
+        <span id="navbar-description" class="sr-only">Opens and closes the main navigation menu</span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav mx-auto mb-2 mb-lg-0" role="menubar">
-          <li class="nav-item">
-            <RouterLink class="nav-link" to="/" @click="collapseMobileMenu">Home</RouterLink>
+        <ul class="navbar-nav mx-auto mb-2 mb-lg-0" role="menubar" aria-label="Main navigation menu">
+          <li class="nav-item" role="none">
+            <RouterLink 
+              class="nav-link" 
+              to="/" 
+              @click="collapseMobileMenu"
+              role="menuitem"
+              aria-label="Go to home page"
+            >
+              Home
+            </RouterLink>
           </li>
-          <li class="nav-item">
-            <RouterLink class="nav-link" to="/resources" @click="collapseMobileMenu">Health & Resources</RouterLink>
+          <li class="nav-item" role="none">
+            <RouterLink 
+              class="nav-link" 
+              to="/resources" 
+              @click="collapseMobileMenu"
+              role="menuitem"
+              aria-label="View health resources and articles"
+            >
+              Health & Resources
+            </RouterLink>
           </li>
-          <li class="nav-item">
-            <RouterLink class="nav-link" to="/tools" @click="collapseMobileMenu">Tools & Trackers</RouterLink>
+          <li class="nav-item" role="none">
+            <RouterLink 
+              class="nav-link" 
+              to="/tools" 
+              @click="collapseMobileMenu"
+              role="menuitem"
+              aria-label="Access health tools and trackers"
+            >
+              Tools & Trackers
+            </RouterLink>
           </li>
-          <li class="nav-item">
-            <RouterLink class="nav-link" to="/appointments" @click="collapseMobileMenu">Book an Appointment</RouterLink>
+          <li class="nav-item" role="none">
+            <RouterLink 
+              class="nav-link" 
+              to="/appointments" 
+              @click="collapseMobileMenu"
+              role="menuitem"
+              aria-label="Book a healthcare appointment"
+            >
+              Book an Appointment
+            </RouterLink>
           </li>
           <!-- Admin-only navigation items -->
-          <li v-if="isAdmin" class="nav-item">
-            <RouterLink class="nav-link" to="/data-tables" @click="collapseMobileMenu">Data Tables</RouterLink>
+          <li v-if="isAdmin" class="nav-item" role="none">
+            <RouterLink 
+              class="nav-link" 
+              to="/data-tables" 
+              @click="collapseMobileMenu"
+              role="menuitem"
+              aria-label="Access admin data tables (admin only)"
+            >
+              Data Tables
+            </RouterLink>
           </li>
-          <li v-if="isAdmin" class="nav-item">
-            <RouterLink class="nav-link" to="/email" @click="collapseMobileMenu">Email Service</RouterLink>
+          <li v-if="isAdmin" class="nav-item" role="none">
+            <RouterLink 
+              class="nav-link" 
+              to="/email" 
+              @click="collapseMobileMenu"
+              role="menuitem"
+              aria-label="Access email service (admin only)"
+            >
+              Email Service
+            </RouterLink>
           </li>
-          <li v-if="isAdmin" class="nav-item">
-            <RouterLink class="nav-link" to="/email-composer" @click="collapseMobileMenu">Email Composer</RouterLink>
+          <li v-if="isAdmin" class="nav-item" role="none">
+            <RouterLink 
+              class="nav-link" 
+              to="/email-composer" 
+              @click="collapseMobileMenu"
+              role="menuitem"
+              aria-label="Access email composer (admin only)"
+            >
+              Email Composer
+            </RouterLink>
           </li>
           
           <!-- Authenticated user navigation -->
-          <li v-if="isAuthenticated" class="nav-item">
-            <RouterLink class="nav-link" to="/account" @click="collapseMobileMenu">My Account</RouterLink>
+          <li v-if="isAuthenticated" class="nav-item" role="none">
+            <RouterLink 
+              class="nav-link" 
+              to="/account" 
+              @click="collapseMobileMenu"
+              role="menuitem"
+              aria-label="Access your account dashboard"
+            >
+              My Account
+            </RouterLink>
           </li>
           
           <!-- Admin navigation -->
-          <li v-if="isAdmin" class="nav-item">
-            <RouterLink class="nav-link" to="/admin" @click="collapseMobileMenu">Admin Panel</RouterLink>
+          <li v-if="isAdmin" class="nav-item" role="none">
+            <RouterLink 
+              class="nav-link" 
+              to="/admin" 
+              @click="collapseMobileMenu"
+              role="menuitem"
+              aria-label="Access admin panel (admin only)"
+            >
+              Admin Panel
+            </RouterLink>
           </li>
         </ul>
         
         <!-- Authentication buttons -->
-        <div class="d-flex gap-3 align-items-center justify-content-center">
+        <div class="d-flex gap-3 align-items-center justify-content-center" role="group" aria-label="User authentication and account actions">
           <!-- User info when authenticated -->
-          <div v-if="isAuthenticated" class="d-flex align-items-center gap-2 me-3">
+          <div v-if="isAuthenticated" class="d-flex align-items-center gap-2 me-3" role="group" aria-label="User account information">
             <div class="text-end d-none d-md-block">
-              <div class="small fw-semibold">{{ currentUser?.firstName }} {{ currentUser?.lastName }}</div>
+              <div class="small fw-semibold" aria-label="User full name">{{ currentUser?.firstName }} {{ currentUser?.lastName }}</div>
               <div class="small text-muted">
                 <span class="badge" :class="{
                   'bg-danger': isAdmin,
                   'bg-warning': isPremium,
                   'bg-secondary': !isAdmin && !isPremium
-                }">
+                }" role="status" :aria-label="`${isAdmin ? 'Administrator' : isPremium ? 'Premium' : 'Regular'} user status`">
                   {{ isAdmin ? 'Admin' : isPremium ? 'Premium' : 'User' }}
                 </span>
               </div>
             </div>
             <div class="dropdown">
-              <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                <i class="bi bi-person-circle me-1"></i>
+              <button 
+                class="btn btn-outline-primary btn-sm dropdown-toggle" 
+                type="button" 
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+                aria-label="User account menu"
+                aria-haspopup="true"
+              >
+                <i class="bi bi-person-circle me-1" aria-hidden="true"></i>
                 <span class="d-none d-sm-inline">Menu</span>
               </button>
-              <ul class="dropdown-menu">
-                <li><RouterLink class="dropdown-item" to="/profile" @click="collapseMobileMenu">
-                  <i class="bi bi-person me-2"></i>Profile
-                </RouterLink></li>
-                <li><RouterLink class="dropdown-item" to="/account" @click="collapseMobileMenu">
-                  <i class="bi bi-gear me-2"></i>Settings
-                </RouterLink></li>
-                <li v-if="isAdmin"><RouterLink class="dropdown-item" to="/admin" @click="collapseMobileMenu">
-                  <i class="bi bi-shield-check me-2"></i>Admin Panel
-                </RouterLink></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><button class="dropdown-item text-danger" @click="handleLogout">
-                  <i class="bi bi-box-arrow-right me-2"></i>Sign Out
-                </button></li>
+              <ul class="dropdown-menu" role="menu" aria-label="User account actions">
+                <li role="none">
+                  <RouterLink 
+                    class="dropdown-item" 
+                    to="/profile" 
+                    @click="collapseMobileMenu"
+                    role="menuitem"
+                    aria-label="View and edit your profile"
+                  >
+                    <i class="bi bi-person me-2" aria-hidden="true"></i>Profile
+                  </RouterLink>
+                </li>
+                <li role="none">
+                  <RouterLink 
+                    class="dropdown-item" 
+                    to="/account" 
+                    @click="collapseMobileMenu"
+                    role="menuitem"
+                    aria-label="Access account settings"
+                  >
+                    <i class="bi bi-gear me-2" aria-hidden="true"></i>Settings
+                  </RouterLink>
+                </li>
+                <li v-if="isAdmin" role="none">
+                  <RouterLink 
+                    class="dropdown-item" 
+                    to="/admin" 
+                    @click="collapseMobileMenu"
+                    role="menuitem"
+                    aria-label="Access admin panel (admin only)"
+                  >
+                    <i class="bi bi-shield-check me-2" aria-hidden="true"></i>Admin Panel
+                  </RouterLink>
+                </li>
+                <li><hr class="dropdown-divider" role="separator"></li>
+                <li role="none">
+                  <button 
+                    class="dropdown-item text-danger" 
+                    @click="handleLogout"
+                    role="menuitem"
+                    aria-label="Sign out of your account"
+                  >
+                    <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>Sign Out
+                  </button>
+                </li>
               </ul>
             </div>
           </div>
           
           <!-- Login/Signup when not authenticated -->
           <template v-else>
-            <RouterLink to="/login" class="btn btn-outline-primary px-4">
+            <RouterLink 
+              to="/login" 
+              class="btn btn-outline-primary px-4"
+              aria-label="Sign in to your account"
+            >
               Sign In
             </RouterLink>
-            <RouterLink to="/signup" class="btn btn-primary px-4">
+            <RouterLink 
+              to="/signup" 
+              class="btn btn-primary px-4"
+              aria-label="Create a new account"
+            >
               Sign Up
             </RouterLink>
           </template>
@@ -220,24 +397,24 @@ onMounted(() => {
   </div>
 
   <!-- Main content -->
-  <main id="main-content" class="container-xxl my-4 fade-in" v-else role="main">
+  <main id="main-content" class="container-xxl my-4 fade-in" v-else role="main" ref="mainContentRef" aria-label="Main content">
     <RouterView />
   </main>
 
   <!-- Footer -->
-  <footer role="contentinfo">
+  <footer role="contentinfo" aria-label="Site footer">
     <div class="container">
       <div class="row align-items-center">
         <div class="col-md-6">
           <div class="d-flex align-items-center">
-            <strong>WellMan</strong> Connect — Empowering men's health through technology
+            <strong>WellMan</strong> Connect — <span aria-label="Empowering men's health through technology">Empowering men's health through technology</span>
           </div>
         </div>
         <div class="col-md-6 text-md-end">
           <nav class="d-flex gap-3 justify-content-md-end" role="navigation" aria-label="Footer navigation">
-            <a href="#" class="text-muted text-decoration-none small">Privacy</a>
-            <a href="#" class="text-muted text-decoration-none small">Terms</a>
-            <a href="#" class="text-muted text-decoration-none small">Contact</a>
+            <a href="#" class="text-muted text-decoration-none small" aria-label="Privacy policy">Privacy</a>
+            <a href="#" class="text-muted text-decoration-none small" aria-label="Terms of service">Terms</a>
+            <a href="#" class="text-muted text-decoration-none small" aria-label="Contact information">Contact</a>
           </nav>
         </div>
       </div>

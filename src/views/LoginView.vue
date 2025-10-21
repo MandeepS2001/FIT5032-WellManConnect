@@ -1,9 +1,10 @@
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { verifyPassword, loadUserFromStorage } from '../utils/passwordManager'
 import { signInWithFirebase } from '../services/firebaseAuth'
+import { formAccessibility, ariaUtils, validationAccessibility, keyboardNavigation } from '../utils/accessibility'
 
 const router = useRouter()
 const route = useRoute()
@@ -178,17 +179,17 @@ const handleDemoLogin = async () => {
       <div class="col-md-6 col-lg-4">
         <div class="card shadow-lg border-0">
           <div class="card-header text-center">
-            <h2 class="mb-0">Welcome Back</h2>
+            <h1 class="mb-0" id="login-heading">Welcome Back</h1>
             <p class="text-muted mb-0">Sign in to your WellMan Connect account</p>
           </div>
           <div class="card-body p-4">
             <!-- Error Message -->
-            <div v-if="loginError" class="alert alert-danger d-flex align-items-center" role="alert">
-              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <div v-if="loginError" class="alert alert-danger d-flex align-items-center" role="alert" aria-live="assertive">
+              <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
               <div>{{ loginError }}</div>
             </div>
 
-            <form @submit.prevent="handleLogin" novalidate>
+            <form @submit.prevent="handleLogin" novalidate role="form" aria-labelledby="login-heading">
               <!-- Email -->
               <div class="mb-3">
                 <label for="loginEmail" class="form-label">Email Address</label>
@@ -202,10 +203,15 @@ const handleDemoLogin = async () => {
                   @input="handleEmailChange"
                   placeholder="Enter your email address"
                   required
+                  aria-required="true"
+                  aria-describedby="email-error email-help"
+                  aria-invalid="!validation.email.isValid && validation.email.message ? 'true' : 'false'"
+                  autocomplete="email"
                 >
-                <div class="invalid-feedback" v-if="!validation.email.isValid && validation.email.message">
+                <div class="invalid-feedback" v-if="!validation.email.isValid && validation.email.message" id="email-error" role="alert">
                   {{ validation.email.message }}
                 </div>
+                <div id="email-help" class="form-text">Enter your registered email address</div>
               </div>
 
               <!-- Password -->
@@ -222,19 +228,26 @@ const handleDemoLogin = async () => {
                     @input="handlePasswordChange"
                     placeholder="Enter your password"
                     required
+                    aria-required="true"
+                    aria-describedby="password-error password-help"
+                    aria-invalid="!validation.password.isValid && validation.password.message ? 'true' : 'false'"
+                    autocomplete="current-password"
                   >
                   <button
                     class="btn btn-outline-secondary"
                     type="button"
                     @click="showPassword = !showPassword"
+                    :aria-label="showPassword ? 'Hide password' : 'Show password'"
                     :title="showPassword ? 'Hide password' : 'Show password'"
+                    :aria-pressed="showPassword"
                   >
-                    <i class="bi" :class="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
+                    <i class="bi" :class="showPassword ? 'bi-eye-slash' : 'bi-eye'" aria-hidden="true"></i>
                   </button>
                 </div>
-                <div class="invalid-feedback" v-if="!validation.password.isValid && validation.password.message">
+                <div class="invalid-feedback" v-if="!validation.password.isValid && validation.password.message" id="password-error" role="alert">
                   {{ validation.password.message }}
                 </div>
+                <div id="password-help" class="form-text">Enter your account password</div>
               </div>
 
               <!-- Submit Button -->
@@ -242,10 +255,12 @@ const handleDemoLogin = async () => {
                 type="submit"
                 class="btn btn-primary w-100 btn-lg mb-3"
                 :disabled="!isFormValid || isSubmitting"
+                aria-describedby="submit-help"
               >
-                <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status"></span>
+                <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                 {{ isSubmitting ? 'Signing In...' : 'Sign In' }}
               </button>
+              <div id="submit-help" class="form-text text-center">Click to sign in to your account</div>
 
               <!-- Demo Login -->
               <button
@@ -253,19 +268,21 @@ const handleDemoLogin = async () => {
                 class="btn btn-outline-secondary w-100 mb-3"
                 @click="handleDemoLogin"
                 :disabled="isSubmitting"
+                aria-describedby="demo-help"
               >
-                <i class="bi bi-play-circle me-2"></i>Try Demo Account
+                <i class="bi bi-play-circle me-2" aria-hidden="true"></i>Try Demo Account
               </button>
+              <div id="demo-help" class="form-text text-center">Experience the app with a pre-configured demo account</div>
             </form>
 
             <!-- Links -->
             <div class="text-center">
               <p class="mb-2">
-                <a href="#" class="text-primary text-decoration-none">Forgot your password?</a>
+                <a href="#" class="text-primary text-decoration-none" aria-label="Reset your password">Forgot your password?</a>
               </p>
               <p class="mb-0">
                 Don't have an account? 
-                <RouterLink to="/signup" class="text-primary fw-semibold">Sign Up</RouterLink>
+                <RouterLink to="/signup" class="text-primary fw-semibold" aria-label="Create a new account">Sign Up</RouterLink>
               </p>
             </div>
           </div>
